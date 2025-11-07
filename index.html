@@ -101,33 +101,30 @@
   </div>
 </dialog>
 
-  <script>
-/* ================ CONFIG ================= */
+<script>
 const ISKCON_URL  = "https://calendar-api.iskcondesiretree.com/api/v1/ekadasi?place=kolkata";
 const PANJIKA_BASE = "https://madhavam-surya-siddhanto-panjika.vercel.app";
 const LOCAL_JSON  = "https://madhabam-ekadashi.vercel.app/api/ekadashi";
 
-/* ================ MAIN FUNCTION ================= */
 async function loadEkadashiData() {
-  const card = document.querySelector(".ekadashi-name");
   try {
     const res = await fetch(LOCAL_JSON, { cache: "no-store" });
     if (!res.ok) throw new Error("Fetch failed");
+    const raw = await res.json();
 
-    const data = await res.json();
-    const list = data.ekadashi_list || [];
+    // 👉 detect structure (object or array)
+    const list = Array.isArray(raw) ? raw : raw.ekadashi_list || [];
+    if (!list.length) throw new Error("No data found");
 
-    if (!list.length) throw new Error("No Ekadashi list found");
-
-    // sort & detect next
+    // sort & next ekadashi
     const sorted = list.sort((a, b) => new Date(a.date) - new Date(b.date));
     const today = new Date();
     const next = sorted.find(e => new Date(e.date) >= today) || sorted[0];
     const remain = Math.ceil((new Date(next.date) - today) / (1000 * 60 * 60 * 24));
 
-    // ---- CARD UPDATE ----
-    document.querySelector(".ekadashi-name").innerText = next.name;
-    document.querySelector(".ekadashi-date").innerText = next.date;
+    // Card update
+    document.querySelector(".ekadashi-name").innerText = next.name || "অজানা একাদশী";
+    document.querySelector(".ekadashi-date").innerText = next.date || "--";
     document.querySelector(".ekadashi-remaining").innerText = `${remain} দিন বাকি`;
     document.querySelector(".ekadashi-paran").innerText =
       `পারণ: ${next.paran_start || "--"} - ${next.paran_end || "--"} ${
@@ -136,12 +133,11 @@ async function loadEkadashiData() {
 
     document.querySelector(".load-status").style.display = "none";
 
-    // ---- TABLE UPDATE ----
+    // Table update
     const tbody = document.querySelector(".annual-ekadashi tbody");
     tbody.innerHTML = sorted
       .map(
-        e => `
-        <tr>
+        e => `<tr>
           <td>${e.name}</td>
           <td>${e.date}</td>
           <td>${e.paran_start || "--"} - ${e.paran_end || "--"} ${e.verified ? "(" + e.verified + ")" : ""}</td>
@@ -155,12 +151,10 @@ async function loadEkadashiData() {
   }
 }
 
-/* Auto load */
 loadEkadashiData();
-
-/* Auto refresh every 3 hours */
 setInterval(loadEkadashiData, 3 * 60 * 60 * 1000);
-  </script>
+</script>
 
+  
 </body>
 </html>
