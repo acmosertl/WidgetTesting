@@ -1,102 +1,65 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>পরবর্তী একাদশী - মাধবম পঞ্জিকা</title>
-<style>
-body{font-family:"Noto Sans Bengali",sans-serif;background:#fff8ec;margin:0;padding:0;display:flex;justify-content:center;align-items:center;height:100vh}
-.card{background:#d32f2f;color:#fff;width:330px;padding:22px 18px;border-radius:18px;box-shadow:0 0 12px #00000030;text-align:center;position:relative}
-.card h3{margin:0;font-size:20px}
-.card h1{margin:12px 0;font-size:30px;color:#ffe57f;text-shadow:0 0 6px #fff}
-.card p{margin:3px 0;font-size:16px}
-button{background:linear-gradient(90deg,#ffb74d,#ff9800);border:none;padding:10px 18px;border-radius:10px;font-weight:bold;color:#5d4037;cursor:pointer;margin-top:10px}
-#listPopup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center}
-#popupBox{background:#fff8ec;color:#3e2723;width:85%;max-width:420px;padding:20px;border-radius:15px;box-shadow:0 0 10px #00000050;max-height:90vh;overflow:auto;position:relative}
-#popupBox h3{margin-top:0;text-align:center;color:#6a1b9a}
-.close{position:absolute;right:14px;top:10px;font-size:20px;cursor:pointer;color:#d32f2f}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{text-align:center;padding:8px;border-bottom:1px solid #e0e0e0}
-th{background:#f8e1f4;color:#6a1b9a}
-</style>
-</head>
-<body>
+<!-- 🌕 Mādhavam Ekadashi Hybrid Final LTS Version --><div id="ekadashi-widget" style="font-family: 'Shiliguri', 'Baluda', 'Noto Sans Bengali', sans-serif; background:#fff1d6; border-radius:16px; box-shadow:0 0 8px #c3a97c; padding:18px; text-align:center; max-width:420px; margin:auto;">
+  <h3 style="color:#E53935; margin-bottom:10px;">🌸 বার্ষিক একাদশী তালিকা</h3>
+  <small id="update-info" style="color:#666;">ডেটা লোড হচ্ছে...</small>
+  <div id="ekadashi-table" style="margin-top:12px; max-height:400px; overflow-y:auto;"></div>
+</div><script>
+(async function(){
+  const GH_JSON = "https://raw.githubusercontent.com/acmosertl/Madhavam-Surya-Siddhanto-Panjika-/main/ekadashi.json";
+  const PROXY_API = "https://madhavam-surya-siddhanto-panjika.vercel.app/api/ekadashi-proxy";
+  const REFRESH_HOURS = 12;
+  const now = Date.now();
+  const lastUpdate = localStorage.getItem("madhavam_ekadashi_updated");
+  const ekDiv = document.getElementById("ekadashi-table");
+  const info = document.getElementById("update-info");
 
-<div class="card" id="ekadashiCard">
-  <h3>🌸 পরবর্তী একাদশী</h3>
-  <h1 id="ekadashiName">লোড হচ্ছে...</h1>
-  <p id="ekadashiDate">--</p>
-  <p id="ekadashiParan">--</p>
-  <p style="font-size:13px;color:#ffe0b2" id="timeZone">ভারত • IST (UTC+05:30)</p>
-  <button onclick="openPopup()">🔔 সম্পূর্ণ একাদশী তালিকা দেখুন</button>
-</div>
+  async function fetchData(){
+    try {
+      const res = await fetch(PROXY_API, {cache:"no-store"});
+      if(!res.ok) throw new Error("Proxy failed");
+      const json = await res.json();
+      localStorage.setItem("madhavam_ekadashi_data", JSON.stringify(json.data || json));
+      localStorage.setItem("madhavam_ekadashi_updated", now);
+      return json.data || json;
+    } catch {
+      const res2 = await fetch(GH_JSON);
+      const data = await res2.json();
+      return data.data || data;
+    }
+  }
 
-<div id="listPopup">
-  <div id="popupBox">
-    <span class="close" onclick="closePopup()">✖</span>
-    <h3>🌸 বার্ষিক একাদশী তালিকা (IST)</h3>
-    <table id="ekadashiTable">
-      <thead><tr><th>একাদশী</th><th>তারিখ</th><th>পারণ</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
+  async function getData(){
+    let data = [];
+    if(lastUpdate && now - lastUpdate < REFRESH_HOURS*3600*1000){
+      const cached = localStorage.getItem("madhavam_ekadashi_data");
+      if(cached) data = JSON.parse(cached);
+    }
+    if(!data || !data.length) data = await fetchData();
+    renderTable(data);
+  }
 
-<script>
-const apiURL = "/api/iskcon"; // তোমার Vercel ডোমেইনেও ব্যবহার হবে
-const localFallback = "ekadashi.json";
-
-async function loadEkadashi(){
-  const card = document.getElementById("ekadashiCard");
-  try {
-    const res = await fetch(apiURL);
-    const data = await res.json();
-    const next = data?.data?.nextEkadashi || data?.data?.[0];
-    if(next){
-      document.getElementById("ekadashiName").textContent = next.name;
-      document.getElementById("ekadashiDate").textContent = next.date;
-      document.getElementById("ekadashiParan").textContent = next.paran || "পরের দিন সকাল";
-    } else throw new Error("কোনো একাদশী পাওয়া যায়নি");
-  } catch {
-    // Local fallback
-    const res = await fetch(localFallback);
-    const list = await res.json();
+  function renderTable(list){
+    if(!list || !list.length){ ekDiv.innerHTML="<p>❌ কোনো তথ্য পাওয়া যায়নি</p>"; return; }
+    let html="";
     const today = new Date();
-    const next = list.find(e => new Date(e.date) > today) || list[0];
-    document.getElementById("ekadashiName").textContent = next.name;
-    document.getElementById("ekadashiDate").textContent = next.date;
-    document.getElementById("ekadashiParan").textContent = next.paran || "পরের দিন সকাল";
+    const todayStr = today.toISOString().split('T')[0];
+    let currentFound = false;
+    list.forEach(item=>{
+      const isToday = item.date===todayStr;
+      if(isToday && !currentFound){
+        localStorage.setItem("currentEkadashi", JSON.stringify(item));
+        currentFound=true;
+      }
+      html+=`
+        <div style="border:1px solid #d1b075; border-radius:8px; margin-bottom:8px; padding:6px 10px; background:${isToday?'#fff9e6':'#fff'};">
+          <b style="color:${isToday?'#E53935':'#444'};">${item.name}</b><br>
+          <span style="font-size:13px;">📅 ${item.date}</span><br>
+          ${item.parana?`<span style="font-size:12px; color:#555;">পারণঃ ${item.parana}</span>`:''}
+        </div>`;
+    });
+    ekDiv.innerHTML=html;
+    info.textContent="স্বয়ংক্রিয়ভাবে আপডেট হয়েছে (ISKCON + Mādhavam)";
   }
-}
 
-// Popup
-function openPopup(){
-  document.getElementById("listPopup").style.display="flex";
-  loadList();
-}
-function closePopup(){
-  document.getElementById("listPopup").style.display="none";
-}
-async function loadList(){
-  const tbody = document.querySelector("#ekadashiTable tbody");
-  tbody.innerHTML = "<tr><td colspan=3>লোড হচ্ছে...</td></tr>";
-  try {
-    const res = await fetch(apiURL);
-    const data = await res.json();
-    const list = data?.data?.allEkadashis || [];
-    tbody.innerHTML = list.map(e =>
-      `<tr><td>${e.name}</td><td>${e.date}</td><td>${e.paran}</td></tr>`
-    ).join("");
-  } catch {
-    const res = await fetch(localFallback);
-    const list = await res.json();
-    tbody.innerHTML = list.map(e =>
-      `<tr><td>${e.name}</td><td>${e.date}</td><td>${e.paran}</td></tr>`
-    ).join("");
-  }
-}
-
-loadEkadashi();
+  await getData();
+})();
 </script>
-</body>
-</html>
