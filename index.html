@@ -1,138 +1,397 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="UTF-8" />
+<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>মাধবম পঞ্জিকা v8.1 Stable LTS</title>
+<title>মাধবম — Ekadashi Engine (Pure)</title>
 <style>
 :root{
-  --bg:#fff4e3; --panel:#fff1dd; --card:#fff8ee; --pink:#f6a9d6;
-  --label:#4527a0; --ink:#2b237c; --accent:#1565c0; --gold:#ffe8a6; --goldink:#7a5200;
-  --shadow:0 4px 12px rgba(0,0,0,.10);
+  --bg:#fff4e3; --panel:#fff1dd; --card:#ffffff; --muted:#7a7a7a;
+  --accent:#e53935; --accent-dark:#c62828; --purple:#5e35b1;
+  --seo-orange:#ff8a65; --seo-blue:#42a5f5; --seo-green:#66bb6a;
+  --shadow: 0 6px 20px rgba(20,20,40,.08);
+  --soft-shadow:0 4px 12px rgba(0,0,0,.06);
+  --radius:14px;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);font-family:"Noto Sans Bengali",system-ui,sans-serif;color:#1a1a1a}
-.wrap{max-width:480px;margin:auto;padding:0}
-.panel{background:var(--panel);border-radius:14px;padding:6px}
-.card{background:var(--card);border-radius:14px;padding:10px;margin:4px;box-shadow:var(--shadow)}
-.titleMain{font-weight:900;font-size:26px;text-align:center;margin:8px 2px 6px}
-.toggleWrap{display:flex;flex-direction:column;align-items:center;gap:4px;margin:0 4px 8px}
-.toggleBar{position:relative;display:flex;align-items:center;justify-content:space-between;
-  background:#f3e4b8;border:1px solid #e0cf8a;border-radius:999px;padding:6px; width:100%;}
-.toggleBar .seg{flex:1;text-align:center;font-weight:800;font-size:13px;color:#6a5617}
-.knob{position:absolute;top:3px;bottom:3px;width:50%;border-radius:999px;background:#ff6f61;
-  transition:transform .25s ease; box-shadow:0 2px 6px rgba(0,0,0,.15)}
-.knob.right{transform:translateX(100%);}
-.toggleHint{font-size:12px;color:#6a5617;font-weight:700}
-.pill{background:var(--pink);border-radius:10px;padding:10px;margin:6px 0}
-.label{color:var(--label);font-weight:900;font-size:14px;margin-bottom:2px}
-.value{font-weight:900;font-size:27px;line-height:1.15}
-.sub{font-size:13px;margin-top:6px}
-.sub b{font-weight:900}
-.paksha{display:block;width:max-content;margin:0 auto 6px auto;background:#ffe7a1;color:#6a5617;
-  border-radius:999px;padding:4px 12px;font-weight:900}
-.timeCol{display:flex;flex-direction:column;gap:6px;margin-top:6px}
-.timeItem{background:var(--pink);border-radius:10px;padding:8px}
-.timeLab{color:var(--label);font-weight:900;font-size:14px;margin-bottom:2px}
-.timeVal{font-weight:900;font-size:24px;line-height:1.1}
-.timeVal .ampm{font-size:20px;margin-left:2px}
-.footer{font-size:12px;text-align:center;margin:6px 0 2px;opacity:.95}
-.nextTag{color:var(--accent);font-weight:900}
-.tide{background:linear-gradient(180deg,#183a8a,#0b2257);color:#fff;border-radius:12px;padding:10px;margin:4px}
-.thead{font-weight:900;text-align:center;margin-bottom:6px}
-.tCol{display:flex;flex-direction:column;gap:6px}
-.tc{background:rgba(255,255,255,.11);padding:8px;border-radius:10px}
-.tLab{font-weight:800;margin-bottom:2px}
-.tVal{font-weight:900;font-size:18px}
-.tVal .ampm{font-size:16px}
-.badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#eee;color:#444;font-size:11px;font-weight:800}
-.badge.warn{background:#ffe1e1;color:#b00020}
-.badge.ok{background:#e0ffe7;color:#0a7a2a}
+html,body{height:100%;margin:0;font-family:"Noto Sans Bengali",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; background:var(--bg); color:#1a1a1a}
+.container{max-width:980px;margin:18px auto;padding:12px}
+.header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.brand{font-weight:900;color:var(--purple);font-size:22px}
+.note{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 360px;gap:14px;align-items:start}
+@media (max-width:920px){ .grid{grid-template-columns:1fr} .rightCol{order:2} .leftCol{order:1} }
+
+.card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--soft-shadow)}
+.topCard{display:flex;flex-direction:column;gap:8px}
+.topHeader{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ekName{font-weight:900;font-size:26px;color:var(--accent)}
+.ekMeta{font-size:13px;color:var(--muted)}
+.countdown{font-size:20px;font-weight:900;color:#222}
+.subline{font-size:13px;color:var(--muted)}
+
+.infoRow{display:flex;gap:8px;flex-wrap:wrap}
+.badge{background:#fff;padding:6px 10px;border-radius:999px;font-weight:800;box-shadow:var(--soft-shadow);font-size:13px}
+.badge.verify{background:linear-gradient(90deg,#e8f5e9,#c8e6c9);color:#1b5e20}
+.badge.isk{background:linear-gradient(90deg,#e3f2fd,#bbdefb);color:#0d47a1}
+
+.pill{background:#fff8fb;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.03)}
+.pill .label{font-weight:900;color:var(--purple);margin-bottom:6px}
+.pill .value{font-weight:900;font-size:20px}
+
+.tableWrap{margin-top:12px}
+.table{width:100%;border-collapse:collapse}
+.table thead th{background:#faf8ff;padding:10px;font-weight:900;color:var(--purple);text-align:left;border-top-left-radius:10px;border-top-right-radius:10px}
+.table tbody tr td{padding:10px;border-top:1px solid #f1f1f1;font-size:14px}
+.small{font-size:13px;color:var(--muted)}
+
+.rightCol .card{position:sticky;top:16px}
+.sideCard .title{font-weight:900;color:var(--purple);font-size:18px;margin-bottom:8px}
+.sideCard .k{font-weight:900;font-size:28px;color:var(--accent)}
+.sideList{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+.sideList .item{background:#fff;padding:10px;border-radius:10px;box-shadow:var(--soft-shadow);display:flex;justify-content:space-between;align-items:center}
+.sideList .item .left{display:flex;flex-direction:column}
+.sideList .item .left .l1{font-weight:900}
+.sideList .item .left .l2{font-size:13px;color:var(--muted)}
+.empty{opacity:.6;text-align:center;padding:24px;color:var(--muted)}
+
+.loadBar{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:700}
+.err{color:#b00020;font-weight:800}
+
+.footer{margin-top:16px;color:var(--muted);font-size:13px;text-align:center}
+.linkLike{color:var(--accent);text-decoration:underline;cursor:pointer}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="panel" id="root">
-    <div style="text-align:center;padding:22px 0;font-weight:700">📍 অবস্থান নির্ধারণ করা হচ্ছে...</div>
+<div class="container">
+  <div class="header">
+    <div class="brand">মাধবম — একাদশী ইঞ্জিন</div>
+    <div class="note">একাদশীর তালিকা: ISKCON + Local hybrid · Auto refresh · Countdown চলবে</div>
   </div>
+
+  <div class="grid">
+    <!-- LEFT: main list + top -->
+    <div class="leftCol">
+      <div class="card topCard" id="topCard">
+        <div class="topHeader">
+          <div>
+            <div class="ekMeta">পরবর্তী একাদশী</div>
+            <div class="ekName" id="ek-name">লোড হচ্ছে...</div>
+          </div>
+          <div style="text-align:right">
+            <div class="countdown" id="ek-count">—</div>
+            <div class="subline" id="ek-date">—</div>
+          </div>
+        </div>
+
+        <div class="infoRow">
+          <div class="badge" id="ek-paran">পারণ: —</div>
+          <div class="badge" id="ek-source">সূত্র: —</div>
+          <div class="badge" id="ek-verified">ভেরিফায়েড: —</div>
+        </div>
+
+        <div class="pill" id="ek-desc">
+          <div class="label">সংক্ষিপ্ত বিবরণ</div>
+          <div class="value small" id="ek-desc-text">একাদশীর বিস্তারিত এখানে দেখাবে — নাম, পারণ, ভেরিফাই ইত্যাদি।</div>
+        </div>
+
+        <div style="margin-top:12px" class="small">
+          <span id="last-updated">Last updated: —</span>
+          <span style="float:right"><span class="linkLike" id="refresh-now">Refresh now</span></span>
+        </div>
+      </div>
+
+      <div class="card tableWrap" style="margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-weight:900;color:var(--purple)">বার্ষিক একাদশী তালিকা (২৪)</div>
+          <div class="loadBar" id="list-status">লোড হচ্ছে…</div>
+        </div>
+
+        <div style="margin-top:12px;overflow:auto">
+          <table class="table" id="ek-table">
+            <thead>
+              <tr><th>একাদশী</th><th>তারিখ</th><th>পারণ</th><th class="small">ভেরিফাই</th></tr>
+            </thead>
+            <tbody id="ek-tbody">
+              <tr><td colspan="4" class="empty">তালিকা এখনও লোড হয়নি</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: side panel (current card + counter list) -->
+    <div class="rightCol">
+      <div class="card sideCard">
+        <div class="title">বর্তমান একাদশী (কার্ড)</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="flex:1">
+            <div class="small">নাম</div>
+            <div class="k" id="side-name">—</div>
+            <div class="small" id="side-date">—</div>
+          </div>
+          <div style="width:110px;text-align:right">
+            <div class="small">দিন</div>
+            <div class="k" id="side-remaining">—</div>
+          </div>
+        </div>
+
+        <div class="sideList" id="side-list" style="margin-top:12px">
+          <div class="item"><div class="left"><div class="l1">লোডিং...</div><div class="l2">তালিকা আসছে</div></div><div></div></div>
+        </div>
+
+        <div style="margin-top:12px" class="small">নোট: কাউন্টার সরাসরি ব্রাউজারে চলবে; পেজ রিফ্রেশ দরকার নেই।</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">এই পেজটি একাদশী-engine; ডেটা সোর্স: <span id="src-text" class="small">/api/ekadashi</span></div>
 </div>
 
 <script>
-/* ===== Math helpers ===== */
-const D2R=Math.PI/180,R2D=180/Math.PI;const norm=x=>((x%360)+360)%360;
-function JD(y,m,d,ut=0){if(m<=2){y--;m+=12;}const A=Math.floor(y/100),B=2-A+Math.floor(A/4);
- return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5+ut/24;}
-function gmst(J){const T=(J-2451545)/36525;return norm(280.46061837+360.98564736629*(J-2451545)+0.000387933*T*T - T*T*T/38710000);}
-function obliq(T){return 23.439291-0.0130042*T;}
-function eclToEq(l,J){const eps=obliq((J-2451545)/36525)*D2R,L=l*D2R;
- return{ra:norm(Math.atan2(Math.sin(L)*Math.cos(eps),Math.cos(L))*R2D)/15,dec:Math.asin(Math.sin(eps)*Math.sin(L))*R2D};}
-function lstDeg(J,lon){return (gmst(J)+lon)%360;}
-function altDeg(dec,ha,lat){return Math.asin(Math.sin(lat*D2R)*Math.sin(dec*D2R)+Math.cos(lat*D2R)*Math.cos(dec*D2R)*Math.cos(ha*D2R))*R2D;}
-function fmt12(h){if(h==null||isNaN(h))return"—";h=(h+24)%24;const ap=h>=12?"PM":"AM";
- let hh=Math.floor(h%12);if(hh===0)hh=12;const mm=String(Math.round((h%1)*60)).padStart(2,"0");
- return`${hh}:${mm} <span class="ampm">${ap}</span>`;}
-const DAYS_BN=["রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার","শনিবার"];
-function fmtDayTime(baseDate,localHour){const d=new Date(baseDate);const h=Math.floor(localHour);const m=Math.round((localHour%1)*60);
- d.setHours(0,0,0,0);d.setHours(d.getHours()+h,m,0,0);return`${DAYS_BN[d.getDay()]}, ${fmt12(localHour)}`;}
-function sunLong(J){const d=J-2451545;const M=norm(357.52911+0.98560028*d);
- return norm(280.46646+0.98564736*d + 1.9146*Math.sin(M*D2R)+0.02*Math.sin(2*M*D2R));}
-function moonLong(J){const d=J-2451545;const Lm=norm(218.3165+13.176358*d),D=norm(297.8501921+12.19074912*d),
- Ms=norm(357.5291092+0.98560028*d),Mm=norm(134.9633964+13.06499295*d);
- return norm(Lm + 6.289*Math.sin(Mm*D2R) + 1.274*Math.sin((2*D-Mm)*D2R) + 0.658*Math.sin(2*D*D2R) - 0.186*Math.sin(Ms*D2R));}
-/* ===== Mode & Calibration ===== */
-const MODE_KEY="madhabam_mode_v8";let MODE=localStorage.getItem(MODE_KEY)||"drik";
-const setMode=m=>{MODE=m;localStorage.setItem(MODE_KEY,m);};
-function lahiriAyanamsaDynamic(J){const T=(J-2451545.0)/36525;return 24.0+(50.290966/3600)*T*100;}
-const MODE_PARAMS={surya:{sun_h0:-0.833,moon_h0:+0.125,sun_corr_deg:+0.00,moon_corr_deg:+0.00,tithi_bias_deg:+0.00,ayan:(J)=>24.00},
- drik:{sun_h0:-0.833,moon_h0:+0.25,sun_corr_deg:+0.28,moon_corr_deg:+3.50,tithi_bias_deg:+0.25,ayan:lahiriAyanamsaDynamic}};
-function riseSetFineOffset(lat,mode){const band=Math.abs(lat)<10?0:Math.abs(lat)<25?0.5:1.0;const base=(mode==="drik")?+0.5:0;return base+band;}
-function correctedSunLong(J,e){return norm(sunLong(J)+(MODE_PARAMS[e]?.sun_corr_deg||0));}
-function correctedMoonLong(J,e){return norm(moonLong(J)+(MODE_PARAMS[e]?.moon_corr_deg||0));}
-/* ===== Core Engine ===== */
-const B_MONTHS=["বৈশাখ","জ্যৈষ্ঠ","আষাঢ়","শ্রাবণ","ভাদ্র","আশ্বিন","কার্তিক","অগ্রহায়ণ","পৌষ","মাঘ","ফাল্গুন","চৈত্র"];
-function bangabdaFromSun(J,localDate){const by=(localDate>=new Date(localDate.getFullYear(),3,14))?(localDate.getFullYear()-593):(localDate.getFullYear()-594);
- const ay=(MODE_PARAMS[MODE].ayan(J));const lon=norm(sunLong(J)-ay);const sign=Math.floor(lon/30);const day=Math.floor(lon%30)+1;
- return{month:B_MONTHS[sign],day,year:by};}
-/* ===== Location ===== */
-const FALLBACK={lat:22.5726,lon:88.3639,tz:(-new Date().getTimezoneOffset()/60),place:"Kolkata, India",city:"Kolkata",label:"Fallback"};
-async function getLocation(){return FALLBACK;}
-function fmtTithi(n){const a=["প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী","পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী","নবমী","দশমী","একাদশী","দ্বাদশী","ত্রয়োদশী","চতুর্দশী","পূর্ণিমা","প্রতিপদ","দ্বিতীয়া","তৃতীয়া","চতুর্থী","পঞ্চমী","ষষ্ঠী","সপ্তমী","অষ্টমী","নবমী","দশমী","একাদশী","দ্বাদশী","ত্রয়োদশী","চতুর্দশী","অমাবস্যা"];return a[(n-1)%30];}
-const NAK=["অশ্বিনী","ভরণী","কৃত্তিকা","রোহিণী","মৃগশিরা","আদ্রা","পুনর্বসূ","পুষ্যা","আশ্লেষা","মঘা","পূর্বফাল্গুনী","উত্তরফাল্গুনী","হস্তা","চিত্রা","স্বাতী","বিশাখা","অনুরাধা","জ্যেষ্ঠা","মূলা","পূর্বাষাঢ়া","উত্তরাষাঢ়া","শ্রবণা","ধনিষ্ঠা","শতভিষা","পূর্বভাদ্রপদ","উত্তরভাদ্রপদ","রেবতী"];
-/* ===== Init ===== */
+/* =========================
+   CONFIG — শুধু এখানে সেট করো
+   ========================= */
+const LOCAL_JSON = "/api/ekadashi"; // ✅ তোমার ekadashi JSON route
+const AUTO_REFRESH_MS = 1000 * 60 * 60 * 3; // 3 hours silent refresh
+const COUNTER_TICK_MS = 1000; // countdown tick
+
+/* ===== utility ===== */
+const $ = sel => document.querySelector(sel);
+const fmtDate = iso => {
+  try{
+    const d = new Date(iso);
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString('bn-BD',{year:'numeric',month:'long',day:'numeric'});
+  }catch(e){ return iso; }
+};
+function prettyTimeRemaining(ms){
+  if(ms<=0) return "0s";
+  const s = Math.floor(ms/1000);
+  const days = Math.floor(s/86400); const hh = Math.floor((s%86400)/3600);
+  const mm = Math.floor((s%3600)/60); const sec = s%60;
+  if(days>0) return `${days} দিন ${hh} ঘন্টা`;
+  if(hh>0) return `${hh}ঘ ${mm}মি`;
+  if(mm>0) return `${mm}মি ${sec}সেক`;
+  return `${sec}সেক`;
+}
+
+/* ===== app state ===== */
+let ekList = []; // array from JSON (objects)
+let currentEk = null;
+let lastFetchedAt = null;
+let countdownTimer = null;
+let tickInterval = null;
+
+/* ===== render helpers ===== */
+function renderTop(next){
+  if(!next){
+    $('#ek-name').textContent = "লোড হচ্ছে...";
+    $('#ek-count').textContent = "—";
+    $('#ek-date').textContent = "—";
+    $('#ek-paran').textContent = "পারণ: —";
+    $('#ek-source').textContent = "সূত্র: —";
+    $('#ek-verified').textContent = "ভেরিফায়েড: —";
+    $('#ek-desc-text').textContent = "তথ্য পাওয়া যায়নি।";
+    return;
+  }
+  $('#ek-name').textContent = next.name || next.name_bn || next.title || "নাম নেই";
+  $('#ek-date').textContent = (next.date || next.date_iso || next.dateISO) ? fmtDate(next.date || next.date_iso || next.dateISO) : "—";
+  $('#ek-paran').textContent = "পারণ: " + (next.paran || next.parana || next.paran_text || next.parana_bn || "—");
+  $('#ek-source').textContent = "সূত্র: " + (next.source || next.from || "Local");
+  $('#ek-verified').textContent = "ভেরিফায়েড: " + (next.verified || "—");
+  $('#ek-desc-text').textContent = (next.notes || next.desc || next.paran_note || "").toString() || "—";
+  currentEk = next;
+}
+
+function renderList(list){
+  const tbody = $('#ek-tbody');
+  tbody.innerHTML = '';
+  if(!list || !list.length){
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">কোনও একাদশী পাওয়া যায়নি</td></tr>`; return;
+  }
+  list.forEach(it=>{
+    const name = it.name || it.name_bn || it.title || '';
+    const date = it.date || it.date_iso || it.dateISO || it.date_en || '';
+    const paran = it.paran || it.parana || it.paran_text || it.parana_bn || '';
+    const verified = it.verified || it.source || '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><strong>${name}</strong><div class="small">${it.paksha||''} ${it.note?('· '+it.note):''}</div></td>
+      <td>${fmtDate(date)}</td>
+      <td class="small">${paran || '—'}</td>
+      <td class="small">${verified || '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderSide(current, list){
+  $('#side-name').textContent = current? (current.name || current.name_bn || current.title) : '—';
+  $('#side-date').textContent = current? (current.date || current.date_iso || current.dateISO || '') : '—';
+  $('#side-remaining').textContent = current? computeDaysRemainingText(current) : '—';
+
+  const sideList = $('#side-list');
+  sideList.innerHTML = '';
+  if(!list || !list.length){
+    sideList.innerHTML = `<div class="item"><div class="left"><div class="l1">তালিকা খালি</div><div class="l2">কোনও ডেটা নেই</div></div></div>`;
+    return;
+  }
+  // show next 6 upcoming as small counters
+  const now = Date.now();
+  const upcoming = list.slice(0,24);
+  upcoming.forEach(it=>{
+    const dt = new Date(it.date || it.date_iso || it.dateISO || it.date_en || it.date).getTime();
+    const remMs = (isNaN(dt)?0:(dt - now));
+    const leftText = remMs>0? prettyTimeRemaining(remMs):"পাস হয়েছে";
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `<div class="left"><div class="l1">${it.name||it.name_bn||it.title}</div><div class="l2">${fmtDate(it.date||it.date_iso||it.dateISO||it.date_en||it.date)}</div></div><div class="right small">${leftText}</div>`;
+    sideList.appendChild(el);
+  });
+}
+
+/* ===== business logic ===== */
+function computeNextEk(list){
+  if(!Array.isArray(list) || list.length===0) return null;
+  // ensure sorted by date ascending
+  const sorted = list.slice().sort((a,b)=>{
+    const da = new Date(a.date||a.date_iso||a.dateISO||a.date_en).getTime();
+    const db = new Date(b.date||b.date_iso||b.dateISO||b.date_en).getTime();
+    return (isNaN(da)?1:da) - (isNaN(db)?1:db);
+  });
+  const now = Date.now();
+  // find first date >= today (use midnight comparison)
+  for(let i=0;i<sorted.length;i++){
+    const it = sorted[i];
+    const d = new Date(it.date||it.date_iso||it.dateISO||it.date_en);
+    if(isNaN(d)) continue;
+    // consider it upcoming if date at 00:00 local is >= today at 00:00
+    const today = new Date(); today.setHours(0,0,0,0);
+    d.setHours(0,0,0,0);
+    if(d.getTime() >= today.getTime()){
+      return {next:sorted[i], list:sorted};
+    }
+  }
+  // fall back to first
+  return {next:sorted[0], list:sorted};
+}
+
+function computeDaysRemainingText(item){
+  if(!item) return '—';
+  const dt = new Date(item.date || item.date_iso || item.dateISO || item.date_en).getTime();
+  if(isNaN(dt)) return '—';
+  const now = Date.now();
+  const ms = dt - now;
+  if(ms<=0) return 'আজ';
+  const d = Math.floor(ms/(1000*60*60*24));
+  return d>0? `${d} দিন` : 'কম';
+}
+
+/* countdown loop */
+function startCountdownFor(item){
+  if(!item) { $('#ek-count').textContent = '—'; return; }
+  if(tickInterval) clearInterval(tickInterval);
+  tickInterval = setInterval(()=>{
+    const dt = new Date(item.date || item.date_iso || item.dateISO || item.date_en).getTime();
+    const rem = dt - Date.now();
+    if(rem <= 0){
+      // if passed, fetch again immediately to shift to next
+      $('#ek-count').textContent = "শুরু হচ্ছে...";
+      fetchAndRender(true);
+      return;
+    }
+    $('#ek-count').textContent = prettyTimeRemaining(rem);
+    $('#side-remaining').textContent = prettyTimeRemaining(rem);
+  }, COUNTER_TICK_MS);
+}
+
+/* fetch + render */
+async function fetchEk(silent=false){
+  try{
+    if(!silent) $('#list-status').textContent = 'লোড করছে…';
+    const res = await fetch(LOCAL_JSON, {cache:'no-store'});
+    if(!res.ok) throw new Error('Fetch failed: '+res.status);
+    const j = await res.json();
+    // expected shape: { ekadashi_list: [...] } or array directly
+    let list = [];
+    if(Array.isArray(j)) list = j;
+    else if(Array.isArray(j.ekadashi_list)) list = j.ekadashi_list;
+    else if(Array.isArray(j.data)) list = j.data;
+    else {
+      // try keys
+      const maybe = Object.values(j).find(v=>Array.isArray(v));
+      if(Array.isArray(maybe)) list = maybe;
+    }
+    lastFetchedAt = new Date();
+    return {ok:true, list, raw:j};
+  }catch(err){
+    console.error("Fetch error:", err);
+    return {ok:false, err};
+  } finally {
+    if(!silent) $('#list-status').textContent = '';
+  }
+}
+
+async function fetchAndRender(silent=false){
+  const r = await fetchEk(silent);
+  if(!r.ok){
+    if(!silent) {
+      $('#list-status').innerHTML = `<span class="err">ডেটা লোড হয়নি</span>`;
+      setTimeout(()=>{ $('#list-status').textContent='লোড হয়েছে'; }, 2000);
+    }
+    return;
+  }
+  ekList = r.list || [];
+  // sort by date
+  ekList.sort((a,b)=>{
+    const da = new Date(a.date || a.date_iso || a.dateISO || a.date_en).getTime() || Infinity;
+    const db = new Date(b.date || b.date_iso || b.dateISO || b.date_en).getTime() || Infinity;
+    return da - db;
+  });
+
+  // render table and top
+  renderList(ekList);
+
+  const {next, list} = computeNextEk(ekList);
+  renderTop(next);
+  renderSide(next, list);
+
+  // last updated stamp
+  $('#last-updated').textContent = 'Last updated: ' + (lastFetchedAt? lastFetchedAt.toLocaleString(): new Date().toLocaleString());
+
+  // start countdown for next
+  startCountdownFor(next);
+}
+
+/* init */
 (async function init(){
- const loc=await getLocation();const {lat,lon,tz,place,city,label}=loc;const now=new Date();
- const bang=bangabdaFromSun(2451545,now);
- const verifyBadge=(label==='GPS')?'<span class="badge ok">GPS</span>':(label==='IP')?'<span class="badge">IP</span>':'<span class="badge warn">Fallback</span>';
- document.getElementById("root").innerHTML=`
- <section class="card">
- <div class="titleMain">পঞ্জিকা</div>
- <div class="toggleWrap">
-   <div class="toggleBar" id="toggleBar"><div class="knob ${MODE==='drik'?'right':''}" id="knob"></div>
-   <div class="seg">সূর্যসিদ্ধান্ত</div><div class="seg">দৃক (Govt)</div></div>
-   <div class="toggleHint">পঞ্জিকা পরিবর্তন করুন</div>
- </div>
- <div class="card" style="margin:4px;text-align:center">
-   আজ: ${bang.day} ${bang.month} ${bang.year} বঙ্গাব্দ<br>
-   📍 ${place||city} ${verifyBadge}<br>
-   ⏰ Local Time — ${now.toLocaleTimeString("en-US",{hour12:true})}
- </div>
- <div class="pill"><span class="paksha">শুক্লপক্ষ</span>
-   <div class="label">তিথি</div><div class="value">${fmtTithi(11)}</div>
-   <div class="sub">পরবর্তী: দ্বাদশী · একাদশী (পারণ: ৬:৪০–৯:১০ ✅ ISKCON)</div>
- </div>
- <div class="pill"><div class="label">নক্ষত্র</div><div class="value">${NAK[3]}</div>
-   <div class="sub"><b>অধিপতি গ্রহ:</b> চন্দ্র (Moon)</div>
- </div>
- <div class="timeCol"><div class="timeItem"><div class="timeLab">সূর্যোদয়</div><div class="timeVal">৬:১০ AM</div></div>
-   <div class="timeItem"><div class="timeLab">সূর্যাস্ত</div><div class="timeVal">৫:০১ PM</div></div>
- </div>
- <div class="footer">Latitude ${lat.toFixed(2)}°, Longitude ${lon.toFixed(2)}°</div>
- <div class="footer">${MODE==="drik"?"দৃক অনুসারে গণনা":"সূর্যসিদ্ধান্ত অনুসারে গণনা"}</div>
- </section>`;
- const bar=document.getElementById('toggleBar'),knob=document.getElementById('knob');
- bar.onclick=()=>{setMode(MODE==="drik"?"surya":"drik");location.reload();};
- /* 🔕 Auto-reload disabled for stable Ekadashi display */
- console.log("Madhabam v8.1 — Auto-reload disabled; stable display enabled.");
+  // show immediate local UI
+  $('#list-status').textContent = 'লোড হচ্ছে…';
+  // initial fetch
+  await fetchAndRender(false);
+
+  // silent auto refresh every 3 hours
+  setInterval(()=>fetchAndRender(true), AUTO_REFRESH_MS);
+
+  // refresh-now button
+  $('#refresh-now').onclick = ()=>{ fetchAndRender(false); };
+
+  // also refresh when visibility regained (useful if user opened tab)
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible'){
+      fetchAndRender(true);
+    }
+  });
+
+  // ensure side list updates every minute for nicer countdown text (less frequent)
+  setInterval(()=>{
+    // re-render side small timers
+    if(ekList && ekList.length){
+      const {next,list} = computeNextEk(ekList);
+      renderSide(next, list);
+    }
+  }, 60*1000);
+
 })();
 </script>
 </body>
