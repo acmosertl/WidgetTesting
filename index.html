@@ -114,6 +114,7 @@ const LOCAL_JSON = "https://madhabam-ekadashi.vercel.app/api/ekadashi";
 
 async function loadEkadashiData() {
   try {
+    console.log("🔍 Trying to fetch data from:", LOCAL_JSON);
     const res = await fetch(LOCAL_JSON);
     if (!res.ok) throw new Error("Fetch failed");
     const data = await res.json();
