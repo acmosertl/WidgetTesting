@@ -2,229 +2,101 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🌸 পরবর্তী একাদশী — Madhabam v9A.5 (Inline Popup)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>পরবর্তী একাদশী - মাধবম পঞ্জিকা</title>
 <style>
-:root{
-  --bg:#fff4e6; --card:#f9f2ea; --red:#bf2b2b; --red-d:#a31f1f;
-  --gold:#ffb74d; --gold2:#ffcc80; --ink:#251b37; --muted:#6b5e7a;
-  --pill:#fde0cf; --ok:#2e7d32;
-  --shadow:0 10px 28px rgba(0,0,0,.16);
-  --radius:22px;
-  --b:12px;
-}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);font-family:"Noto Sans Bengali",system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans Bengali",sans-serif;color:var(--ink)}
-.wrap{max-width:720px;margin:16px auto;padding:8px}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
-.head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.badge{background:var(--red);color:#fff;border-radius:18px;padding:6px 12px;font-weight:800}
-.title{flex:1;text-align:center;font-size:24px;font-weight:900;color:#fff;background:var(--red);border-radius:18px;padding:10px 8px;text-shadow:0 1px 0 rgba(0,0,0,.25);margin-top:6px}
-.panel{background:var(--red);color:#fff;border-radius:26px;padding:22px 18px}
-.name{font-size:42px;line-height:1.05;font-weight:900;text-align:center;margin:8px 0 2px;
-  text-shadow:0 0 20px rgba(255,221,77,.55),0 0 40px rgba(255,193,7,.35)}
-.date{font-size:22px;font-weight:800;text-align:center;margin:8px 0}
-.left{font-size:24px;font-weight:900;text-align:center;margin:10px 0 4px}
-.paran{font-size:18px;text-align:center;margin:8px 0 2px}
-.paran .ok{color:#C8E6C9;background:rgba(255,255,255,.12);padding:1px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.35)}
-.loc{display:flex;justify-content:center;gap:8px;align-items:center;margin:10px 0 0;font-weight:800}
-.pin{font-size:18px}
-.note{color:rgba(255,255,255,.8);text-align:center;font-size:14px;margin-top:8px}
-
-.btn{display:block;margin:14px auto 4px;border:0;background:linear-gradient(90deg,var(--gold),var(--gold2));
-  color:#4a2800;font-weight:900;padding:12px 16px;border-radius:16px;box-shadow:0 8px 18px rgba(255,167,38,.35);cursor:pointer}
-.btn:active{transform:translateY(1px)}
-.tag{display:inline-block;background:#ffd54f;color:#7a4b00;border-radius:999px;padding:6px 10px;font-weight:900}
-
-/* popup (inline, framed) */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(8px);
-  display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
-.modal{width:min(88vmin,480px);aspect-ratio:1/1;background:#fff8ee;border-radius:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
-.m-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #f0e0d2}
-.m-title{font-size:22px;font-weight:900;color:#4b2563}
-.m-close{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:0;background:#ffebee;color:#b71c1c;font-size:20px;cursor:pointer}
-.m-body{padding:10px 14px;overflow:auto}
-
-/* table */
-.table{width:100%;border-collapse:collapse}
-.table th,.table td{padding:10px 8px;border-bottom:1px solid #f1e4d8}
-.table th{background:#f1dcff;color:#4b2563;text-align:left;font-weight:900;position:sticky;top:0}
-.nameCell{font-weight:900}
-.paranCell{white-space:nowrap}
-.small{font-size:13px;color:var(--muted)}
-
-/* compact layout spacing */
-.compact{padding:10px}
-.panel{padding:16px}
-.name{font-size:38px}
-.date{font-size:20px}
-.left{font-size:22px}
-
-/* helper */
-.hide{display:none !important}
-.center{ text-align:center }
+body{font-family:"Noto Sans Bengali",sans-serif;background:#fff8ec;margin:0;padding:0;display:flex;justify-content:center;align-items:center;height:100vh}
+.card{background:#d32f2f;color:#fff;width:330px;padding:22px 18px;border-radius:18px;box-shadow:0 0 12px #00000030;text-align:center;position:relative}
+.card h3{margin:0;font-size:20px}
+.card h1{margin:12px 0;font-size:30px;color:#ffe57f;text-shadow:0 0 6px #fff}
+.card p{margin:3px 0;font-size:16px}
+button{background:linear-gradient(90deg,#ffb74d,#ff9800);border:none;padding:10px 18px;border-radius:10px;font-weight:bold;color:#5d4037;cursor:pointer;margin-top:10px}
+#listPopup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;justify-content:center;align-items:center}
+#popupBox{background:#fff8ec;color:#3e2723;width:85%;max-width:420px;padding:20px;border-radius:15px;box-shadow:0 0 10px #00000050;max-height:90vh;overflow:auto;position:relative}
+#popupBox h3{margin-top:0;text-align:center;color:#6a1b9a}
+.close{position:absolute;right:14px;top:10px;font-size:20px;cursor:pointer;color:#d32f2f}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{text-align:center;padding:8px;border-bottom:1px solid #e0e0e0}
+th{background:#f8e1f4;color:#6a1b9a}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card compact">
-    <div class="head">
-      <span class="badge">🌸 পরবর্তী একাদশী</span>
-      <div class="tag">IST • UTC+05:30</div>
-    </div>
 
-    <div class="panel" id="ekaPanel">
-      <div class="name" id="ekaName">লোড হচ্ছে…</div>
-      <div class="date" id="ekaDate">—</div>
-      <div class="left" id="ekaLeft">—</div>
-      <div class="paran" id="ekaParan">—</div>
-      <div class="loc"><span class="pin">📍</span> ভারত • IST</div>
-      <div class="note">সমস্ত গণনা ভারতীয় মান সময় (IST) অনুসারী।</div>
-
-      <button class="btn" id="openList">🔔 সম্পূর্ণ একাদশী তালিকা দেখুন</button>
-    </div>
-  </div>
+<div class="card" id="ekadashiCard">
+  <h3>🌸 পরবর্তী একাদশী</h3>
+  <h1 id="ekadashiName">লোড হচ্ছে...</h1>
+  <p id="ekadashiDate">--</p>
+  <p id="ekadashiParan">--</p>
+  <p style="font-size:13px;color:#ffe0b2" id="timeZone">ভারত • IST (UTC+05:30)</p>
+  <button onclick="openPopup()">🔔 সম্পূর্ণ একাদশী তালিকা দেখুন</button>
 </div>
 
-<!-- Inline Popup -->
-<div class="overlay" id="overlay">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle">
-    <div class="m-head">
-      <div class="m-title" id="mtitle">🌸 বার্ষিক একাদশী তালিকা (IST)</div>
-      <button class="m-close" id="closeList" aria-label="Close">✖</button>
-    </div>
-    <div class="m-body">
-      <table class="table" id="listTbl">
-        <thead>
-          <tr><th>একাদশী</th><th>তারিখ</th><th>পারণ</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <p class="small center" style="margin-top:10px">তালিকা IST-ভিত্তিক; প্রয়োজনে তারিখ/পারণ স্থানীয় সৎসংসভা/মন্দির অনুযায়ী নিশ্চিত করুন।</p>
-    </div>
+<div id="listPopup">
+  <div id="popupBox">
+    <span class="close" onclick="closePopup()">✖</span>
+    <h3>🌸 বার্ষিক একাদশী তালিকা (IST)</h3>
+    <table id="ekadashiTable">
+      <thead><tr><th>একাদশী</th><th>তারিখ</th><th>পারণ</th></tr></thead>
+      <tbody></tbody>
+    </table>
   </div>
 </div>
 
 <script>
-/* ====== Time helpers (IST) ====== */
-const IST_OFFSET_MIN = 330; // +05:30
-function nowIST(){ // Date object in IST (but stored as UTC with offset math)
-  const now = new Date();
-  // convert local->UTC minutes, then add IST offset to get IST "wall clock"
-  const utc = now.getTime() + (now.getTimezoneOffset()*60000);
-  return new Date(utc + IST_OFFSET_MIN*60000);
-}
-function pad(n){return n<10?'0'+n:n}
-function fmtDateIST(d){ // -> DD-MM-YYYY (IST)
-  const y=d.getUTCFullYear(), m=d.getUTCMonth()+1, dd=d.getUTCDate();
-  return `${pad(dd)}-${pad(m)}-${y}`;
-}
-function diffDays(a,b){ // days between (a->b), floor towards positive
-  const ms = b - a;
-  return Math.ceil(ms/86400000);
-}
+const apiURL = "/api/iskcon"; // তোমার Vercel ডোমেইনেও ব্যবহার হবে
+const localFallback = "ekadashi.json";
 
-/* ====== Data (IST, 2025–26 sample list; expand easily) ======
-   name: Bengali Ekadashi name,
-   date: "YYYY-MM-DD" (IST midnight as the day of fasting),
-   paran: optional human text (e.g., "পরের দিন সকাল ৬:৪০–৯:১০ AM")
-*/
-const events = [
-  { name:"রমা একাদশী",  date:"2025-11-15", paran:"পরের দিন সকাল ৬:৪০–৯:১০ AM" },
-  { name:"উৎপন্না একাদশী", date:"2025-11-30", paran:"পরের দিন সকাল ৬:৪০–৯:১০ AM" },
-  { name:"মোক্ষদা একাদশী", date:"2025-12-14", paran:"পরের দিন সকাল ৬:৩০–৮:৫৫ AM" },
-  { name:"সাফল্যা একাদশী", date:"2026-01-10", paran:"পরের দিন সকাল ৬:৪৫–৯:১৫ AM" },
-  { name:"পুত্রদা একাদশী", date:"2026-01-29" },
-  { name:"ষটতিলা একাদশী", date:"2026-02-09" },
-  { name:"বিজয়া একাদশী", date:"2026-02-25" },
-  { name:"আমলকি একাদশী", date:"2026-03-11" },
-  { name:"পাপমোচনী একাদশী", date:"2026-03-27" },
-  { name:"কমলা একাদশী", date:"2026-04-10" },
-  { name:"বরুথিনী একাদশী", date:"2026-04-24" },
-  { name:"মোহিনী একাদশী", date:"2026-05-09" },
-  { name:"আপরা একাদশী", date:"2026-05-24" },
-  { name:"পান্ডব নির্জলা", date:"2026-06-08" },
-  { name:"যোগিনী একাদশী", date:"2026-06-23" },
-  { name:"শায়নী একাদশী", date:"2026-07-08" },
-  { name:"কামিকা একাদশী", date:"2026-07-23" },
-  { name:"পবিত্রা একাদশী", date:"2026-08-07" },
-  { name:"অন্নদা একাদশী", date:"2026-08-22" },
-  { name:"পরশুরাম একাদশী", date:"2026-09-06" },
-  { name:"ইন্দিরা একাদশী", date:"2026-09-20" },
-  { name:"পাশাঙ্কুষা একাদশী", date:"2026-10-06" },
-  { name:"রমা একাদশী", date:"2026-10-21" },
-  { name:"উৎপন্না একাদশী", date:"2026-11-05" },
-];
-
-/* ====== Core logic ====== */
-function getNextEkadashiIST(now=nowIST()){
-  // Find first event with date >= today (IST)
-  const todayStr = fmtDateIST(now).split('-').reverse().join('-'); // YYYY-MM-DD
-  const todayISO = new Date(`${todayStr}T00:00:00+05:30`);
-  // Map to objects with real Date in IST
-  const mapped = events.map(ev=>{
-    const d = new Date(`${ev.date}T00:00:00+05:30`);
-    return {...ev, _d: d};
-  }).sort((a,b)=>a._d-b._d);
-
-  for(const ev of mapped){
-    if(ev._d >= todayISO) return ev;
-  }
-  // if all past, loop to the first of next cycle
-  return mapped[0];
-}
-
-function renderMain(){
-  const now = nowIST();
-  const ek = getNextEkadashiIST(now);
-
-  const dateStr = fmtDateIST(ek._d);
-  document.getElementById('ekaName').textContent = ek.name;
-  document.getElementById('ekaDate').textContent = `${dateStr}`;
-  const days = diffDays(new Date(`${fmtDateIST(now).split('-').reverse().join('-')}T00:00:00+05:30`), ek._d);
-  document.getElementById('ekaLeft').textContent = `${days} দিন বাকি`;
-
-  const paranEl = document.getElementById('ekaParan');
-  if(ek.paran){
-    paranEl.innerHTML = `পারণ: ${ek.paran} <span class="ok">✔︎</span>`;
-  }else{
-    paranEl.textContent = 'পারণ: —';
+async function loadEkadashi(){
+  const card = document.getElementById("ekadashiCard");
+  try {
+    const res = await fetch(apiURL);
+    const data = await res.json();
+    const next = data?.data?.nextEkadashi || data?.data?.[0];
+    if(next){
+      document.getElementById("ekadashiName").textContent = next.name;
+      document.getElementById("ekadashiDate").textContent = next.date;
+      document.getElementById("ekadashiParan").textContent = next.paran || "পরের দিন সকাল";
+    } else throw new Error("কোনো একাদশী পাওয়া যায়নি");
+  } catch {
+    // Local fallback
+    const res = await fetch(localFallback);
+    const list = await res.json();
+    const today = new Date();
+    const next = list.find(e => new Date(e.date) > today) || list[0];
+    document.getElementById("ekadashiName").textContent = next.name;
+    document.getElementById("ekadashiDate").textContent = next.date;
+    document.getElementById("ekadashiParan").textContent = next.paran || "পরের দিন সকাল";
   }
 }
 
-function renderTable(){
-  const tbody = document.querySelector('#listTbl tbody');
-  tbody.innerHTML = '';
-  events.forEach(ev=>{
-    const tr = document.createElement('tr');
-    const d = new Date(`${ev.date}T00:00:00+05:30`);
-    const ds = fmtDateIST(d);
-    tr.innerHTML = `
-      <td class="nameCell">${ev.name}</td>
-      <td>${ds}</td>
-      <td class="paranCell">${ev.paran ? ev.paran+' <span style="color:#2e7d32">✔︎</span>' : '—'}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+// Popup
+function openPopup(){
+  document.getElementById("listPopup").style.display="flex";
+  loadList();
+}
+function closePopup(){
+  document.getElementById("listPopup").style.display="none";
+}
+async function loadList(){
+  const tbody = document.querySelector("#ekadashiTable tbody");
+  tbody.innerHTML = "<tr><td colspan=3>লোড হচ্ছে...</td></tr>";
+  try {
+    const res = await fetch(apiURL);
+    const data = await res.json();
+    const list = data?.data?.allEkadashis || [];
+    tbody.innerHTML = list.map(e =>
+      `<tr><td>${e.name}</td><td>${e.date}</td><td>${e.paran}</td></tr>`
+    ).join("");
+  } catch {
+    const res = await fetch(localFallback);
+    const list = await res.json();
+    tbody.innerHTML = list.map(e =>
+      `<tr><td>${e.name}</td><td>${e.date}</td><td>${e.paran}</td></tr>`
+    ).join("");
+  }
 }
 
-/* ====== Popup controls (inline) ====== */
-const overlay = document.getElementById('overlay');
-document.getElementById('openList').addEventListener('click',()=>{
-  renderTable();
-  overlay.style.display='flex';
-});
-document.getElementById('closeList').addEventListener('click',()=>overlay.style.display='none');
-overlay.addEventListener('click',e=>{
-  if(e.target === overlay){ overlay.style.display='none'; }
-});
-
-/* ====== Boot + Auto refresh ====== */
-renderMain();
-// UI tick: refresh countdown every 60s
-setInterval(renderMain, 60000);
-// Data tick: in case events array later replaced by fetch, keep API cadence same
-setInterval(renderMain, 12*60*60*1000);
+loadEkadashi();
 </script>
 </body>
 </html>
