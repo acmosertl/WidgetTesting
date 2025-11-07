@@ -1,52 +1,233 @@
-<!-- 🌕 Mādhavam Ekadashi – Final Hybrid LTS --><div id="ekaWrap" style="font-family:'Noto Sans Bengali',sans-serif;background:#fff4e3;color:#1a1a1a;max-width:720px;margin:auto;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,.15);padding:18px;">
-  <h2 style="text-align:center;color:#E53935;margin-bottom:10px;">🌸 মাধবম একাদশী তালিকা</h2>
-  <div id="ekaList" style="max-height:480px;overflow-y:auto;padding-right:6px;"></div>
-  <p id="ekaInfo" style="font-size:13px;text-align:center;margin-top:10px;color:#555;">ডেটা লোড হচ্ছে...</p>
-</div><script>
-(async function(){
-  const API_URL="https://madhavam-surya-siddhanto-panjika.vercel.app/api/ekadashi"; 
-  const FALLBACK="https://raw.githubusercontent.com/acmosertl/Madhavam-Surya-Siddhanto-Panjika-/main/ekadashi.json";
-  const REFRESH=12*3600*1000;
-  const now=Date.now();
-  const last=localStorage.getItem("madhavam_ekadashi_updated");
-  const box=document.getElementById("ekaList"),info=document.getElementById("ekaInfo");
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>মাধবম একাদশী — কার্ড + বার্ষিক তালিকা</title>
+<style>
+  :root{
+    --bg:#fff6e8; --card:#d22f2f; --text:#ffffff; --ink:#2b1e16;
+    --pill:#ffe6a7; --shadow:0 12px 30px rgba(0,0,0,.12);
+    --accent:#8b5cf6; --ok:#22c55e;
+  }
+  body{margin:0;background:var(--bg);font-family: Noto Sans Bengali, system-ui, -apple-system, Segoe UI, Roboto, Arial; color:var(--ink)}
+  .wrap{max-width:880px;margin:24px auto;padding:16px}
+  .card{background:#fff;border-radius:20px;box-shadow:var(--shadow);padding:18px}
+  .ek-hero{background:var(--card);color:var(--text);border-radius:28px;padding:28px 22px;margin-top:12px}
+  .chip{display:inline-flex;gap:10px;align-items:center;background:var(--pill);color:#5b3a00;border-radius:999px;padding:6px 12px;font-weight:700}
+  .h1{font-weight:900;font-size:34px;letter-spacing:.5px;margin:6px 0 10px}
+  .h2{font-weight:800;font-size:24px;margin:0}
+  .big{font-size:44px;font-weight:900;letter-spacing:1px;text-shadow:0 8px 30px rgba(0,0,0,.25)}
+  .meta{opacity:.9;margin-top:10px;font-size:18px;line-height:1.45}
+  .btn{display:inline-block;border:none;border-radius:16px;padding:14px 18px;font-weight:800;cursor:pointer;box-shadow:var(--shadow)}
+  .btn-grad{background:linear-gradient(135deg,#ffcc66,#ff9a3c);color:#412500}
+  .note{opacity:.7;font-size:14px;margin-top:12px}
+  .tick{display:none;color:var(--ok);font-weight:900;margin-left:6px}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:680px){.grid{grid-template-columns: 1fr 1fr}}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden}
+  thead th{background:#f3e8ff;color:#4c1d95;padding:12px 10px;text-align:left}
+  tbody td{padding:12px 10px;border-bottom:1px solid #f1efe9}
+  .center{text-align:center}
+  /* popup */
+  dialog{border:none;border-radius:24px;max-width:520px;width:min(92vw,520px);padding:0}
+  dialog::backdrop{backdrop-filter: blur(9px) brightness(.9)}
+  .pop-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #f1efe9}
+  .pop-body{padding:10px 16px 18px}
+  .x{width:34px;height:34px;border-radius:50%;border:0;background:#ffede1;cursor:pointer;font-size:18px}
+  /* badges */
+  .badge{display:inline-flex;gap:8px;align-items:center;padding:4px 10px;border-radius:999px;background:#fff;box-shadow:var(--shadow)}
+  .small{font-size:13px;opacity:.85}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="grid">
+      <div>
+        <div class="badge small" id="tzBadge">IST • UTC+05:30</div>
+        <div class="ek-hero">
+          <div class="chip">🌸 পরবর্তী একাদশী</div>
+          <div style="margin-top:10px">
+            <div class="big" id="ekName">লোড হচ্ছে…</div>
+            <div class="h2"><span id="ekDate">—</span> • <span id="ddays">—</span> দিন বাকি</div>
+            <div class="meta" id="paranaBox">পারণ: <span id="ekParana">—</span> <span class="tick" id="vTick">✔</span></div>
+            <div class="meta small" id="sourceTag" style="margin-top:6px;opacity:.8">সোর্স: —</div>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <button class="btn btn-grad" id="openList">🔔 সম্পূর্ণ একাদশী তালিকা দেখুন</button>
+          <div class="note">সমস্ত গণনা ভারতীয় মান সময় (IST) অনুযায়ী।</div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center">
+          <div class="h2" style="margin-bottom:6px">এখান থেকেই সাইড-প্যানেলে দেখান</div>
+          <div class="small center" style="max-width:360px;opacity:.8">
+            এই পেজটিই iFrame করে Blogger সাইড-প্যানেলে দিন। একই সোর্স থেকে কার্ড+তালিকা—দুটোই আপডেট হবে।
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  async function getLive(){
+  <!-- Annual list (inline preview for page readers) -->
+  <div class="card" style="margin-top:18px">
+    <div class="h2" style="color:#5b21b6;margin-bottom:8px">🌸 বার্ষিক একাদশী তালিকা (IST)</div>
+    <div class="small" style="opacity:.8;margin-bottom:10px">তথ্য স্বয়ংক্রিয়ভাবে আপডেট হয় (ISKCON + Madhavam Panjikā Hybrid)</div>
+    <div style="overflow:auto">
+      <table>
+        <thead><tr><th>একাদশী</th><th>তারিখ</th><th>পারণ</th></tr></thead>
+        <tbody id="tblBody"><tr><td colspan="3" class="center">লোড হচ্ছে…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Popup -->
+<dialog id="popup">
+  <div class="pop-head">
+    <div class="h2" style="color:#5b21b6;font-size:20px">🌸 বার্ষিক একাদশী তালিকা (IST)</div>
+    <button class="x" id="closePop">✕</button>
+  </div>
+  <div class="pop-body">
+    <div class="small" style="opacity:.8;margin:2px 0 10px">তথ্য স্বয়ংক্রিয়ভাবে আপডেট হয় (ISKCON + Madhavam Panjikā Hybrid)</div>
+    <div style="overflow:auto;max-height:58vh">
+      <table>
+        <thead><tr><th>একাদশী</th><th>তারিখ</th><th>পারণ</th></tr></thead>
+        <tbody id="tblBodyPop"><tr><td colspan="3" class="center">লোড হচ্ছে…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</dialog>
+
+<script>
+/* =========================
+   CONFIG — শুধু তিনটা জিনিস বসান
+   ========================= */
+const ISKCON_URL  = ""; // উদাহরণ: "https://example.com/iskcon-ekadashi.json" (খালি রাখলে স্কিপ)
+const PANJIKA_BASE = "https://<YOUR-PANJIKA-DOMAIN>"; // আপনার পঞ্জিকা লাইভ ডোমেইন (যেটা সাইড-প্যানেলে চলছে)
+const LOCAL_JSON  = PANJIKA_BASE + "/ekadashi.json";   // একই ডোমেইনে ekadashi.json (Same-origin)
+
+/* ===== Utility ===== */
+const pad = n => String(n).padStart(2,"0");
+const isoToDMY = iso => { const [y,m,d]=iso.split("-"); return `${pad(+d)}-${pad(+m)}-${y}` };
+const daysLeft = (iso) => {
+  const a = new Date(iso+"T00:00:00+05:30"); // IST assume
+  const b = new Date();
+  const diff = Math.ceil((a - b)/(24*3600*1000));
+  return diff;
+};
+function sortByDate(list){ return [...list].sort((x,y)=> x.date_iso.localeCompare(y.date_iso)); }
+
+/* ===== Data loaders (fallback: ISKCON -> LOCAL_JSON -> CACHE) ===== */
+async function tryFetch(url,label){
+  if(!url) throw new Error("empty-url");
+  const r = await fetch(url,{cache:"no-store"});
+  if(!r.ok) throw new Error(label+" HTTP "+r.status);
+  const data = await r.json();
+  if(!Array.isArray(data)) throw new Error(label+" invalid JSON");
+  return {label, data};
+}
+
+async function loadAll(){
+  let source = null;
+  let data = null;
+
+  // 1) ISKCON
+  try{
+    if(ISKCON_URL){
+      const res = await tryFetch(ISKCON_URL,"ISKCON");
+      source = res.label; data = res.data.map(x=>({...x, verified:true}));
+    }
+  }catch(e){ /* skip */ }
+
+  // 2) LOCAL JSON (same-origin)
+  if(!data){
     try{
-      const r=await fetch(API_URL,{cache:"no-store"});
-      if(!r.ok) throw 0;
-      const j=await r.json();
-      localStorage.setItem("madhavam_ekadashi_data",JSON.stringify(j.data||j));
-      localStorage.setItem("madhavam_ekadashi_updated",now);
-      return j.data||j;
-    }catch(e){
-      const r=await fetch(FALLBACK);
-      const d=await r.json();
-      return d.data||d;
+      const res = await tryFetch(LOCAL_JSON,"LOCAL");
+      // যদি ISKCON আগে না আসে, verified=false
+      source = res.label; data = res.data.map(x=>({...x, verified: x.verified ?? false}));
+    }catch(e){ /* skip */ }
+  }
+
+  // 3) CACHE (localStorage)
+  if(!data){
+    const stash = localStorage.getItem("ekadashi_cache");
+    if(stash){
+      source = "CACHE";
+      data = JSON.parse(stash);
     }
   }
 
-  let data=[];
-  if(last && now-last<REFRESH){
-    const cache=localStorage.getItem("madhavam_ekadashi_data");
-    if(cache) data=JSON.parse(cache);
-  }
-  if(!data.length) data=await getLive();
+  if(!data) throw new Error("No data from any source.");
+  // 24টি রাখি, sorted
+  data = sortByDate(data).slice(0,24);
+  // cache save
+  localStorage.setItem("ekadashi_cache", JSON.stringify(data));
+  localStorage.setItem("ekadashi_cache_time", new Date().toISOString());
+  return {source, data};
+}
 
-  const today=new Date(),todayISO=today.toISOString().split("T")[0];
-  let html="";
-  data.forEach(item=>{
-    const active=item.date===todayISO;
-    if(active) localStorage.setItem("currentEkadashi",JSON.stringify(item));
-    html+=`
-      <div style="background:${active?'#fff9e1':'#fff'};border:1px solid #deb76a;border-radius:12px;padding:10px;margin-bottom:8px;">
-        <b style="color:${active?'#E53935':'#333'};font-size:17px;">${item.name}</b><br>
-        <span style="font-size:14px;">📅 ${item.date}</span><br>
-        ${item.parana?`<span style="font-size:13px;color:#444;">পারণঃ ${item.parana}</span>`:''}
-        ${item.verified?' <span style="color:#2e7d32;font-size:12px;">✔ ISKCON verified</span>':''}
-      </div>`;
-  });
-  box.innerHTML=html||"<p style='text-align:center'>❌ কোনো তথ্য পাওয়া যায়নি</p>";
-  info.textContent="স্বয়ংক্রিয়ভাবে আপডেট হয়েছে (Panchika + ISKCON)";
+/* ===== Renderers ===== */
+function renderCard(upcoming, sourceLabel){
+  document.getElementById("ekName").textContent = upcoming.name_bn || "—";
+  document.getElementById("ekDate").textContent = isoToDMY(upcoming.date_iso);
+  document.getElementById("ddays").textContent = Math.max(0, daysLeft(upcoming.date_iso));
+  document.getElementById("ekParana").textContent = upcoming.parana_bn || "—";
+  const tick = document.getElementById("vTick");
+  tick.style.display = upcoming.verified ? "inline" : "none";
+  const st = document.getElementById("sourceTag");
+  st.textContent = "সোর্স: " + (sourceLabel === "ISKCON" ? "ISKCON ✅" :
+                                 sourceLabel === "LOCAL"  ? "Madhavam Panjikā" :
+                                 "Cached");
+}
+
+function renderTables(list){
+  const rows = list.map(x=>`<tr><td>${x.name_bn}</td><td>${isoToDMY(x.date_iso)}</td><td>${x.parana_bn||"—"}</td></tr>`).join("");
+  document.getElementById("tblBody").innerHTML = rows || `<tr><td colspan="3" class="center">কোনো তথ্য পাওয়া যায়নি</td></tr>`;
+  document.getElementById("tblBodyPop").innerHTML = rows || `<tr><td colspan="3" class="center">কোনো তথ্য পাওয়া যায়নি</td></tr>`;
+}
+
+/* ===== Sunrise-based refresh (simple) + 12h backup =====
+   - প্রতি 12 ঘন্টায় একবার চেক
+   - আজকের তারিখ বদলালে (লোকাল) ফোর্স রিলোড
+*/
+function scheduleAutoRefresh(){
+  // 12h
+  setInterval(()=>location.reload(), 12*60*60*1000);
+  // local date flip
+  const startDay = new Date().getDate();
+  setInterval(()=>{
+    if(new Date().getDate() !== startDay) location.reload();
+  }, 30*60*1000);
+}
+
+/* ===== Init ===== */
+(async function init(){
+  // IST Badge
+  document.getElementById("tzBadge").textContent = "IST • UTC+05:30";
+
+  try{
+    const {source, data} = await loadAll();
+    // pick upcoming
+    const todayISO = new Date().toISOString().slice(0,10);
+    const upcoming = sortByDate(data).find(x=>x.date_iso >= todayISO) || data[0];
+    renderCard(upcoming, source);
+    renderTables(data);
+  }catch(e){
+    document.getElementById("ekName").textContent = "ডাটা লোডে সমস্যা…";
+    console.error(e);
+  }
+
+  scheduleAutoRefresh();
 })();
+
+/* Popup controls */
+const pop = document.getElementById("popup");
+document.getElementById("openList").addEventListener("click", ()=> pop.showModal());
+document.getElementById("closePop").addEventListener("click", ()=> pop.close());
+pop.addEventListener("click", (e)=>{ if(e.target===pop) pop.close(); });
 </script>
+</body>
+</html>
