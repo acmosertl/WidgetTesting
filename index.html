@@ -101,28 +101,28 @@
   </div>
 </dialog>
 
-<script>
-const ISKCON_URL  = "https://calendar-api.iskcondesiretree.com/api/v1/ekadasi?place=kolkata";
-const PANJIKA_BASE = "https://madhavam-surya-siddhanto-panjika.vercel.app";
-const LOCAL_JSON  = "https://madhabam-ekadashi.vercel.app/api/ekadashi";
+
+  <script>
+/* 🔧 FINAL AUTO-EKADASHI LOADER */
+const GITHUB_JSON = "https://raw.githubusercontent.com/acmosertl/Madhavam-Surya-Siddhanto-Panjika-/refs/heads/main/ekadashi.json";
 
 async function loadEkadashiData() {
   try {
-    const res = await fetch(LOCAL_JSON, { cache: "no-store" });
+    const res = await fetch(GITHUB_JSON, { cache: "no-store" });
     if (!res.ok) throw new Error("Fetch failed");
-    const raw = await res.json();
 
-    // 👉 detect structure (object or array)
+    const raw = await res.json();
     const list = Array.isArray(raw) ? raw : raw.ekadashi_list || [];
+
     if (!list.length) throw new Error("No data found");
 
-    // sort & next ekadashi
+    // sort & detect next
     const sorted = list.sort((a, b) => new Date(a.date) - new Date(b.date));
     const today = new Date();
     const next = sorted.find(e => new Date(e.date) >= today) || sorted[0];
     const remain = Math.ceil((new Date(next.date) - today) / (1000 * 60 * 60 * 24));
 
-    // Card update
+    // Update card
     document.querySelector(".ekadashi-name").innerText = next.name || "অজানা একাদশী";
     document.querySelector(".ekadashi-date").innerText = next.date || "--";
     document.querySelector(".ekadashi-remaining").innerText = `${remain} দিন বাকি`;
@@ -133,27 +133,29 @@ async function loadEkadashiData() {
 
     document.querySelector(".load-status").style.display = "none";
 
-    // Table update
+    // Annual list render
     const tbody = document.querySelector(".annual-ekadashi tbody");
     tbody.innerHTML = sorted
       .map(
         e => `<tr>
           <td>${e.name}</td>
           <td>${e.date}</td>
-          <td>${e.paran_start || "--"} - ${e.paran_end || "--"} ${e.verified ? "(" + e.verified + ")" : ""}</td>
+          <td>${e.paran_start || "--"} - ${e.paran_end || "--"} ${
+            e.verified ? "(" + e.verified + ")" : ""
+          }</td>
         </tr>`
       )
       .join("");
-
   } catch (err) {
     console.error("❌ Ekadashi Load Error:", err);
     document.querySelector(".ekadashi-name").innerText = "ডাটা লোড সমস্যা...";
   }
 }
 
+// Auto run & 3-hour refresh
 loadEkadashiData();
 setInterval(loadEkadashiData, 3 * 60 * 60 * 1000);
-</script>
+  </script>
 
   
 </body>
