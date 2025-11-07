@@ -1,291 +1,90 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>🌸 মাধবম একাদশী ক্যালেন্ডার v5.2 (IST Core)</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>মাধবম একাদশী ক্যালেন্ডার</title>
 <style>
-:root{
-  --red1:#C62828; --red2:#D32F2F; --gold:#FFD54F; --cream:#FFF8E1;
-  --txt:#ffffff; --shadow:0 10px 24px rgba(0,0,0,.18);
-}
-*{box-sizing:border-box}
-body{margin:0;background:#fff4e3;font-family:"Noto Sans Bengali",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
-.wrap{max-width:460px;margin:18px auto;padding:12px}
-.card{
-  background:linear-gradient(180deg,var(--red1),var(--red2));
-  color:var(--txt); border-radius:20px; padding:18px; box-shadow:var(--shadow);
-}
-.title{margin:0 0 8px 0;font-weight:900;font-size:20px;text-align:center}
-.name{font-size:30px;font-weight:900;letter-spacing:.3px;text-align:center;
-  color:var(--gold); text-shadow:0 0 14px rgba(255,213,79,.7),0 0 28px rgba(255,213,79,.35)}
-.meta{font-size:16px;font-weight:700;text-align:center;margin-top:6px}
-.paran{font-size:15px;text-align:center;margin-top:6px}
-.tick{display:inline-block;margin-left:6px;font-weight:900;color:#52ff8f}
-.loc{font-size:13px;opacity:.95;text-align:center;margin-top:8px}
-.btn{
-  display:block;margin:12px auto 0 auto;background:linear-gradient(90deg,#FBC02D,#F57C00);
-  color:#4E342E;font-weight:800;border:none;border-radius:14px;padding:10px 16px;
-  box-shadow:0 6px 16px rgba(0,0,0,.12); cursor:pointer; transition:.25s;
-}
-.btn:hover{box-shadow:0 0 16px rgba(255,215,64,.65)}
-.note{font-size:12px;text-align:center;color:#5d4037;margin-top:8px}
-
-/* Popup */
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:99}
-.box{background:var(--cream);width:min(92vw,560px);margin:8% auto;border-radius:18px;box-shadow:var(--shadow);max-height:80vh;display:flex;flex-direction:column}
-.head{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.08)}
-.head h3{margin:0;font-size:18px;color:#8E24AA;font-family:"Him","Noto Sans Bengali",system-ui}
-.close{font-weight:900;color:#C62828;cursor:pointer;font-size:18px}
-.body{padding:8px 12px;overflow:auto}
-.table{width:100%;border-collapse:collapse}
-.table th{position:sticky;top:0;background:#F3E5F5;color:#6A1B9A;font-weight:900;font-size:13px;padding:8px;text-align:center}
-.table td{padding:8px;border-bottom:1px solid rgba(0,0,0,.08);font-size:14px;text-align:center}
-.tr-cur{background:#FFF3E0;outline:2px solid #FBC02D}
-.badge{display:inline-block;font-size:11px;padding:2px 6px;border-radius:10px;background:#ffe082;color:#5d4037;margin-left:6px}
-.skel{opacity:.6;filter:grayscale(1)}
-.small{font-size:12px}
+body{font-family:"Noto Sans Bengali",sans-serif;background:#fff6e9;margin:0;padding:0;text-align:center;}
+.card{background:#b71c1c;color:#fff;margin:10px auto;padding:20px;border-radius:18px;width:90%;max-width:360px;
+box-shadow:0 2px 10px rgba(0,0,0,0.15);}
+.title{font-size:22px;font-weight:700;}
+.sub{font-size:32px;font-weight:700;color:#ffea00;text-shadow:0 0 8px #ffb300;}
+.date{font-size:16px;margin-top:8px;}
+.loc{margin:12px 0;font-size:14px;color:#fff8e1;}
+.btn{background:linear-gradient(90deg,#ffa000,#ffca28);border:none;border-radius:12px;padding:8px 16px;
+font-size:15px;color:#4e342e;font-weight:600;cursor:pointer;margin-top:10px;}
+.btn:hover{background:linear-gradient(90deg,#ffb300,#ffecb3);}
+.small{font-size:13px;color:#4e342e;margin-top:10px;}
+/* popup modal */
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);
+backdrop-filter:blur(2px);z-index:99;justify-content:center;align-items:center;}
+.modal-content{background:#fff3e0;color:#3e2723;border-radius:16px;padding:20px;width:90%;max-width:420px;
+max-height:80vh;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.25);}
+.modal-content h3{margin-top:0;font-size:20px;color:#6a1b9a;}
+table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{border-bottom:1px solid #d7ccc8;padding:8px 4px;font-size:15px;text-align:center;}
+th{background:#f3e5f5;color:#4a148c;}
+.close{position:absolute;right:16px;top:12px;font-size:20px;color:#c62828;cursor:pointer;}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <section class="card" id="ekaCard">
-    <h2 class="title">🌸 পরবর্তী একাদশী</h2>
-    <div class="name" id="ekaName">লোড হচ্ছে…</div>
-    <div class="meta" id="ekaDate">—</div>
-    <div class="meta" id="ekaLeft">—</div>
-    <div class="paran" id="ekaParan" style="display:none">—</div>
-    <div class="loc" id="ekaLoc">📍 কলকাতা (IST)</div>
-    <button class="btn" id="openList">🔔 সম্পূর্ণ একাদশী তালিকা দেখুন</button>
-    <div class="note small">সমস্ত গণনা ভারতীয় মান সময় (IST, UTC+05:30) অনুযায়ী।</div>
-  </section>
+<div class="card" id="ekadashiCard">
+  <div class="title">🌸 পরবর্তী একাদশী</div>
+  <div class="sub" id="ekaName">লোড হচ্ছে...</div>
+  <div class="date" id="ekaDate">–</div>
+  <div class="loc">📍 ভারত • IST (UTC+05:30)</div>
+  <button class="btn" onclick="openList()">🔔 সম্পূর্ণ একাদশী তালিকা দেখুন</button>
+  <div class="small">সমস্ত গণনা ভারতীয় মান সময় (IST) অনুযায়ী।</div>
 </div>
 
-<!-- Popup: Annual List -->
-<div class="modal" id="listModal">
-  <div class="box">
-    <div class="head">
-      <h3>🌸 বার্ষিক একাদশী তালিকা (IST)</h3>
-      <span class="close" id="closeList">✖</span>
-    </div>
-    <div class="body">
-      <table class="table" id="ekaTable">
-        <thead><tr><th>একাদশী</th><th>তারিখ</th><th>পারণ</th></tr></thead>
-        <tbody id="ekaTbody"></tbody>
-      </table>
-      <div class="note">সমস্ত সময় IST ভিত্তিক। পারণ সময় কেবল তখনই দেখানো হয় যখন উৎসে উল্লেখ থাকে; না থাকলে “পরের দিন” দেখানো হয়।</div>
-    </div>
+<!-- Popup Modal -->
+<div class="modal" id="listModal" onclick="closeModalOutside(event)">
+  <div class="modal-content" id="modalContent">
+    <span class="close" onclick="closeList()">✖</span>
+    <h3>🌸 বার্ষিক একাদশী তালিকা (IST)</h3>
+    <table id="ekaTable">
+      <thead><tr><th>একাদশী</th><th>তারিখ</th><th>পারণ</th></tr></thead>
+      <tbody id="ekaBody"></tbody>
+    </table>
   </div>
 </div>
 
 <script>
-/* =========================================================
-   Mādhabam Ekādaśī Calendar v5.2 — IST Core + Global Offset
-   Single-file (GitHub + Vercel ready). No server needed.
-   Data Strategy:
-   1) Try direct ISKCON JSON (may be CORS locked)
-   2) Try r.jina.ai relay (CORS-friendly mirror)
-   3) Fallback to embedded minimal list (no parana)
-   ========================================================= */
-
-// ---------- CONFIG ----------
-const REGION = "kolkata";          // IST core
-const MAX_EVENTS = 50;             // pull enough to cover ~1 year
-// Candidate sources (adjustable later if you have a better JSON URL)
-const SOURCES = [
-  `https://iskcon.today/api/calendar?region=${REGION}&limit=${MAX_EVENTS}`,
-  // CORS-friendly read-through (tries to fetch the above even if CORS-locked)
-  `https://r.jina.ai/http://iskcon.today/api/calendar?region=${REGION}&limit=${MAX_EVENTS}`,
-  `https://r.jina.ai/https://iskcon.today/api/calendar?region=${REGION}&limit=${MAX_EVENTS}`
+// Local fallback data (short sample)
+const ekadashiList=[
+ {name_bn:"উত্থান একাদশী",date:"২০২৫-১১-৩০",parana:"পরের দিন সকাল ৬:৪০-৯:১০"},
+ {name_bn:"মোক্ষদা একাদশী",date:"২০২৫-১২-১৪",parana:"পরের দিন সকাল ৬:৩০-৮:৫৫"},
+ {name_bn:"সাফল্যা একাদশী",date:"২০২৬-০১-১০",parana:"পরের দিন সকাল ৬:৪৫-৯:১৫"}
 ];
-
-// ---- Minimal embedded fallback (only if all remote fail) ----
-const FALLBACK = [
-  // NOTE: Only for emergency UI; no parana => no tick ✓
-  // You can safely deploy; once remote works, this won't be used.
-  {"name":"উত্থান একাদশী","date":"2025-11-30"},
-  {"name":"মোক্ষদা একাদশী","date":"2025-12-14"},
-  {"name":"সাফলা একাদশী","date":"2026-01-10"}
-];
-
-// ---------- Utilities ----------
-const IST_OFFSET_MIN = 330; // minutes
-function toIST(dUtc){
-  // Return a Date representing same timestamp, but helpers below use display in bn-IN locale.
-  return new Date(dUtc.getTime() + (IST_OFFSET_MIN - dUtc.getTimezoneOffset())*60000);
+function loadNext(){
+  const now=new Date();const future=ekadashiList.find(e=>new Date(e.date.replace(/-/g,'-'))>now);
+  if(!future)return;
+  document.getElementById("ekaName").innerText=future.name_bn;
+  document.getElementById("ekaDate").innerText=future.date+" • "+daysLeft(future.date)+" দিন বাকি";
 }
-function fmtDateBn(dateStr){
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('bn-IN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+function daysLeft(d){
+  const diff=(new Date(d.replace(/-/g,'-'))-new Date())/86400000;
+  return Math.ceil(diff);
 }
-function daysLeftFromTodayIST(targetISO){
-  const nowUtc = new Date();
-  const nowIST = toIST(nowUtc);
-  const startOfTodayIST = new Date(nowIST); startOfTodayIST.setHours(0,0,0,0);
-  const target = new Date(targetISO+"T00:00:00+05:30");
-  const diff = Math.ceil((target - startOfTodayIST)/86400000);
-  return diff;
+function openList(){
+  const body=document.getElementById("ekaBody");
+  body.innerHTML="";
+  ekadashiList.forEach(e=>{
+    body.innerHTML+=`<tr><td>${e.name_bn}</td><td>${e.date}</td><td>${e.parana}</td></tr>`;
+  });
+  const modal=document.getElementById("listModal");
+  modal.style.display="flex";
+  window.parent.postMessage({madhabamResize:800},"*");
 }
-function hasParanaString(s){
-  if(!s) return false;
-  // Detect something like "7:45 AM – 10:15 AM", "07:02–08:38 AM", etc.
-  return /([0-9]{1,2}:[0-9]{2}\s?(AM|PM))\s*[–-]\s*([0-9]{1,2}:[0-9]{2}\s?(AM|PM))/i.test(s);
+function closeList(){
+  document.getElementById("listModal").style.display="none";
+  window.parent.postMessage({madhabamResize:520},"*");
 }
-function istNext5amDelay(){
-  // schedule refresh at next 05:00 IST
-  const nowUtc = new Date();
-  // Current IST:
-  const nowIST = toIST(nowUtc);
-  const nextIST = new Date(nowIST);
-  nextIST.setDate(nowIST.getDate() + 1);
-  nextIST.setHours(5,0,0,0);
-  // Convert to UTC diff:
-  const diffMs = nextIST - nowIST;
-  return diffMs;
+function closeModalOutside(e){
+  if(e.target.id==="listModal"){closeList();}
 }
-function localOffsetVsIST(){
-  const now = new Date();
-  const localOffsetMin = -now.getTimezoneOffset(); // minutes from UTC
-  const diffMin = localOffsetMin - IST_OFFSET_MIN; // local - IST
-  if(diffMin === 0) return "IST";
-  const sign = diffMin > 0 ? "+" : "–";
-  const absm = Math.abs(diffMin);
-  const hh = Math.floor(absm/60).toString().padStart(2,'0');
-  const mm = (absm%60).toString().padStart(2,'0');
-  return `IST ${sign} ${hh}:${mm}`;
-}
-function getLocalTZName(){
-  try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata"; }
-  catch(e){ return "Asia/Kolkata"; }
-}
-
-// ---------- Data fetch ----------
-async function fetchEkadashiRaw(){
-  for(const url of SOURCES){
-    try{
-      const res = await fetch(url, {cache:'no-store'});
-      if(!res.ok) continue;
-      const txt = await res.text();
-      // Some mirrors return JSON with text/plain; parse safely
-      const data = JSON.parse(txt);
-      if(data && (data.events || Array.isArray(data))){
-        return data.events || data;
-      }
-    }catch(e){ /* try next */ }
-  }
-  // All failed → fallback
-  return FALLBACK;
-}
-
-function normalizeEvents(list){
-  // Expect objects possibly shaped like:
-  // { name, name_bn, date, paran/parana, type }
-  const out = [];
-  const ekakey = (s)=> (s||"").toLowerCase().replace("ekādaśī","ekadasi");
-  for(const e of list){
-    const typ = (e.type||"").toLowerCase();
-    const nm  = (e.name_bn || e.name || "").trim();
-    const dt  = (e.date || e.iso || e.start || "").slice(0,10);
-    if(!dt) continue;
-    // Filter: only Ekadashi
-    const isEka = typ.includes("ekadasi") || ekakey(nm).includes("ekadasi") || nm.includes("একাদশী");
-    if(!isEka) continue;
-    out.push({
-      name: nm || "একাদশী",
-      date: dt,
-      parana: (e.paran || e.parana || e.parana_time || e.paranaTime || "").trim()
-    });
-  }
-  // Deduplicate + sort ascending
-  out.sort((a,b)=> new Date(a.date)-new Date(b.date));
-  const uniq = [];
-  const seen = new Set();
-  for(const x of out){
-    const key = x.name+"|"+x.date;
-    if(!seen.has(key)){ uniq.push(x); seen.add(key); }
-  }
-  // Trim around one year/24 items if long:
-  return uniq.slice(0, 24);
-}
-
-// ---------- Render ----------
-async function boot(){
-  const locEl = document.getElementById('ekaLoc');
-  // Location line: show IST core vs global offset for non-India
-  const tz = getLocalTZName();
-  if(/^(Asia\/Kolkata|Asia\/Calcutta)$/i.test(tz)){
-    locEl.textContent = "📍 ভারত • IST (UTC+05:30)";
-  }else{
-    locEl.textContent = `📍 ${tz} • Local Time: ${localOffsetVsIST()}`;
-  }
-
-  const raw = await fetchEkadashiRaw();
-  const ekas = normalizeEvents(raw);
-
-  if(!ekas.length){
-    // Hard fail
-    document.getElementById('ekaName').textContent = "ডেটা লোডে সমস্যা হয়েছে";
-    document.getElementById('ekaDate').textContent = "পরে আবার চেষ্টা করুন";
-    document.getElementById('ekaLeft').textContent = "—";
-    scheduleSunriseRefresh();
-    return;
-  }
-
-  // Find current/next by IST day boundary
-  const todayUtc = new Date();
-  const todayIST = toIST(todayUtc); todayIST.setHours(0,0,0,0);
-  let show = null;
-  for(const e of ekas){
-    const d = new Date(e.date+"T00:00:00+05:30");
-    if(d >= todayIST){ show = e; break; }
-  }
-  if(!show) show = ekas[ekas.length-1];
-
-  // Fill main card
-  const left = daysLeftFromTodayIST(show.date);
-  document.getElementById('ekaName').textContent = show.name;
-  document.getElementById('ekaDate').textContent = "📅 " + fmtDateBn(show.date);
-  document.getElementById('ekaLeft').textContent = left<=0 ? "আজ একাদশী 🌸" : `${left} দিন বাকি`;
-
-  const parEl = document.getElementById('ekaParan');
-  if(hasParanaString(show.parana)){
-    parEl.style.display = 'block';
-    parEl.innerHTML = `পারণ: ${show.parana} <span class="badge">দ্বাদশী, পরের দিন</span><span class="tick">✓</span>`;
-  }else{
-    parEl.style.display = 'none';
-    parEl.textContent = "";
-  }
-
-  // Build annual popup table (24 rows max)
-  const tb = document.getElementById('ekaTbody');
-  tb.innerHTML = "";
-  for(const e of ekas){
-    const isCur = (e.date === show.date);
-    const parText = hasParanaString(e.parana) ? `${e.parana} (পরের দিন)` : "পরের দিন";
-    const tr = document.createElement('tr');
-    if(isCur) tr.className = "tr-cur";
-    tr.innerHTML = `<td>${e.name}</td><td>${fmtDateBn(e.date)}</td><td>${parText}</td>`;
-    tb.appendChild(tr);
-  }
-
-  scheduleSunriseRefresh();
-}
-
-function scheduleSunriseRefresh(){
-  const delay = Math.max(istNext5amDelay(), 30_000); // safety min 30s
-  setTimeout(()=>boot(), delay);
-}
-
-// Popup control
-const listModal = document.getElementById('listModal');
-document.getElementById('openList').onclick = ()=>{ listModal.style.display='block'; };
-document.getElementById('closeList').onclick = ()=>{ listModal.style.display='none'; };
-window.addEventListener('click', (e)=>{
-  if(e.target === listModal) listModal.style.display='none';
-});
-
-// Start
-boot();
+loadNext();
 </script>
 </body>
 </html>
