@@ -151,9 +151,11 @@ html,body{height:100%;margin:0;font-family:"Noto Sans Bengali",system-ui,-apple-
 
 <script>
 /* =========================
-   CONFIG — শুধু এখানে সেট করো
-   ========================= */
-const LOCAL_JSON = "/api/ekadashi"; // ✅ তোমার ekadashi JSON route
+CONFIG – শুধু এখানে সেট করো
+========================= */
+
+const ISKCON_PROXY = "https://madhabam-ekadashi.vercel.app/api/iskcon-proxy";
+const LOCAL_JSON = "./ekadashi.json";  // fallback file
 const AUTO_REFRESH_MS = 1000 * 60 * 60 * 3; // 3 hours silent refresh
 const COUNTER_TICK_MS = 1000; // countdown tick
 
