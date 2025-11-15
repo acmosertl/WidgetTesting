@@ -1,268 +1,381 @@
-<div id="madhabam-final-moon-widget" style="max-width:300px;">
-
-  <p style="text-align: center; color: #795548; font-weight: 600; font-size: 0.9em; margin: 10px;">চন্দ্র তথ্য লোড হচ্ছে...</p>
-
-</div>
+<!-- Paste THIS ENTIRE BLOCK into Blogger HTML/JavaScript gadget -->
+<div id="madhabam-final-moon-widget" data-w="340" style="max-width:340px;"></div>
 
 <script>
-
-/* FINAL STANDALONE MOON WIDGET WITH FORCED BENGALI FONT */
-
 (function(){
+  // ---------- CONFIG ----------
+  const CONTAINER_ID = 'madhabam-final-moon-widget';
+  const API_SS = 'https://api.sunrise-sunset.org/json'; // sunrise-sunset (formatted=0)
+  const API_OM = 'https://api.open-meteo.com/v1/forecast'; // open-meteo fallback
+  const API_IP = 'https://ipapi.co/json/'; // ip fallback
+  const DEFAULT = { lat:22.57, lon:88.36, city:'Kolkata', source:'স্থির স্থানাঙ্ক' };
+  const REFRESH_MS = 30 * 60 * 1000; // 30 minutes
 
-    // --- 1. FORCE FONT FIX using !important ---
-    const styleTag = document.createElement('style');
-    styleTag.innerHTML = `
-        /* Import Noto Sans Bengali from Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap');
-        
-        /* Apply font forcefully to the entire gadget with specific Bengali fonts */
-        #madhabam-final-moon-widget, #madhabam-final-moon-widget * { 
-            box-sizing: border-box; 
-            font-family: 'Noto Sans Bengali', 'Kalpurush', 'SolaimanLipi', sans-serif !important; 
-            -webkit-font-smoothing: antialiased; 
-            -moz-osx-font-smoothing: grayscale; 
-            text-rendering: optimizeLegibility; 
-            line-height: 1.4; 
-            color: #333; 
+  // ---------- UTIL: Bengali numerals & formatting ----------
+  const BANGLA = ['\u09e6','\u09e7','\u09e8','\u09e9','\u09ea','\u09eb','\u09ec','\u09ed','\u09ee','\u09ef'];
+  function toBnNumber(s){
+    if (s === null || s === undefined) return '';
+    s = String(s);
+    return s.split('').map(ch => (/[0-9]/.test(ch) ? BANGLA[Number(ch)] : ch)).join('');
+  }
+  function toBnTimeFromDate(d){
+    if(!d) return '— —';
+    try{
+      const opts = { hour:'2-digit', minute:'2-digit', hour12:true, timeZone:'Asia/Kolkata' };
+      const parts = new Intl.DateTimeFormat('en-IN', opts).format(d).split(' ');
+      if(parts.length===2){
+        const [hm, period] = parts;
+        const [h,m] = hm.split(':');
+        return `${toBnNumber(h.padStart(2,'0'))}:${toBnNumber(m.padStart(2,'0'))} ${period.toUpperCase()}`;
+      }
+      return toBnNumber(parts.join(' '));
+    }catch(e){ return '— —'; }
+  }
+  function toBnDateFromDate(d){
+    if(!d) return '— —';
+    try{
+      return new Intl.DateTimeFormat('bn-BD', { day:'2-digit', month:'2-digit', year:'numeric' }).format(d);
+    }catch(e){ return '— —'; }
+  }
+
+  // ---------- DOM Builder (no innerHTML, only createElement + textContent) ----------
+  function buildShell(container){
+    // clear
+    while(container.firstChild) container.removeChild(container.firstChild);
+
+    // styles (inject once)
+    const styleId = 'madhabam-moon-style';
+    if(!document.getElementById(styleId)){
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        #${CONTAINER_ID} *{box-sizing:border-box;font-family:'Noto Sans Bengali','Kalpurush','SolaimanLipi',sans-serif;}
+        .mb-card{background:#fff;border-radius:14px;padding:16px;margin:8px 4px;box-shadow:0 6px 20px rgba(0,0,0,0.08);border:3px solid rgba(0,0,0,0.02);}
+        .mb-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+        .mb-icon{font-size:22px;color:#FFC107}
+        .mb-title{font-weight:800;color:#5D4037;font-size:18px}
+        .mb-divider{height:1px;border-bottom:1px dashed #E0E0E0;margin:8px 0}
+        .mb-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
+        .mb-label{font-weight:700;color:#555}
+        .mb-value{font-weight:900;color:#0b2540}
+        .mb-moonbox{background:#eef6ff;border-radius:10px;padding:12px;margin-top:12px}
+        .mb-phase{display:flex;gap:12px;align-items:center}
+        .mb-phase-text{font-weight:700;color:#2a2a6a}
+        .mb-meta{margin-top:8px}
+        .mb-loc{font-size:13px;color:#7a7a7a;text-align:right;margin-top:10px}
+        .mb-fullbox{background:#2436a2;color:#fff;border-radius:12px;padding:12px;margin-top:12px;text-align:left}
+      `;
+      document.head.appendChild(style);
+    }
+
+    // wrapper
+    const card = document.createElement('div');
+    card.className = 'mb-card';
+    card.setAttribute('role','region');
+    card.setAttribute('aria-label','চাঁদ তথ্য');
+
+    // header
+    const header = document.createElement('div'); header.className='mb-header';
+    const icon = document.createElement('div'); icon.className='mb-icon'; icon.textContent = '🌙';
+    const title = document.createElement('div'); title.className='mb-title'; title.textContent = 'চন্দ্র সময় ও পর্যায়';
+    header.appendChild(icon); header.appendChild(title);
+    card.appendChild(header);
+
+    // divider
+    const divider = document.createElement('div'); divider.className='mb-divider';
+    card.appendChild(divider);
+
+    // moonrise row
+    const rowRise = document.createElement('div'); rowRise.className='mb-row';
+    const lblRise = document.createElement('div'); lblRise.className='mb-label'; lblRise.textContent='চন্দ্রোদয়:';
+    const valRise = document.createElement('div'); valRise.className='mb-value'; valRise.id = 'mb-moonrise'; valRise.textContent='— —';
+    rowRise.appendChild(lblRise); rowRise.appendChild(valRise);
+    card.appendChild(rowRise);
+
+    // moonset row
+    const rowSet = document.createElement('div'); rowSet.className='mb-row';
+    const lblSet = document.createElement('div'); lblSet.className='mb-label'; lblSet.textContent='চন্দ্রাস্ত:';
+    const valSet = document.createElement('div'); valSet.className='mb-value'; valSet.id = 'mb-moonset'; valSet.textContent='— —';
+    rowSet.appendChild(lblSet); rowSet.appendChild(valSet);
+    card.appendChild(rowSet);
+
+    // moon panel
+    const moonPanel = document.createElement('div'); moonPanel.className='mb-moonbox';
+    const phaseWrap = document.createElement('div'); phaseWrap.className='mb-phase';
+    const moonSVGHolder = document.createElement('div'); moonSVGHolder.id='mb-moon-svg'; moonSVGHolder.style.width='56px'; moonSVGHolder.style.height='56px';
+    const phaseText = document.createElement('div'); phaseText.className='mb-phase-text'; phaseText.id='mb-phase-text'; phaseText.textContent='— —';
+    phaseWrap.appendChild(moonSVGHolder); phaseWrap.appendChild(phaseText);
+    moonPanel.appendChild(phaseWrap);
+
+    const illum = document.createElement('div'); illum.className='mb-meta'; illum.id='mb-illum'; illum.textContent='আলোকমাত্রা: —';
+    moonPanel.appendChild(illum);
+
+    // full/new box
+    const fullBox = document.createElement('div'); fullBox.className='mb-fullbox';
+    const fullTitle = document.createElement('div'); fullTitle.style.fontWeight='800'; fullTitle.textContent='পরবর্তী:';
+    const fullLine = document.createElement('div'); fullLine.style.marginTop='8px';
+    const fullLabel = document.createElement('div'); fullLabel.id='mb-next-full'; fullLabel.textContent='পূর্ণিমা: —';
+    const newLabel = document.createElement('div'); newLabel.id='mb-next-new'; newLabel.textContent='অমাবস্যা: —';
+    fullLine.appendChild(fullLabel); fullLine.appendChild(newLabel);
+    fullBox.appendChild(fullTitle); fullBox.appendChild(fullLine);
+    moonPanel.appendChild(fullBox);
+
+    card.appendChild(moonPanel);
+
+    // location
+    const loc = document.createElement('div'); loc.className='mb-loc'; loc.id='mb-loc'; loc.textContent='স্থল সূত্র: —';
+    card.appendChild(loc);
+
+    container.appendChild(card);
+  }
+
+  // ---------- Utility: build moon SVG (simple) ----------
+  function buildMoonSVG(ageDays){
+    // create an SVG element representing illuminated portion (approx)
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns,'svg');
+    svg.setAttribute('viewBox','0 0 64 64');
+    svg.setAttribute('width','56');
+    svg.setAttribute('height','56');
+
+    const circle = document.createElementNS(ns,'circle');
+    circle.setAttribute('cx','32'); circle.setAttribute('cy','32'); circle.setAttribute('r','30');
+    circle.setAttribute('fill','#2c3b7a');
+    svg.appendChild(circle);
+
+    const syn = 29.530588853;
+    const frac = (ageDays % syn) / syn; // 0..1
+    const illum = (1 - Math.cos(2*Math.PI*frac))/2;
+
+    // lit shape path
+    const path = document.createElementNS(ns,'path');
+    // For simplicity, use clip-like effect: draw circle of light offset by factor
+    const offset = 30 * Math.cos(2*Math.PI*ageDays / syn);
+    // build elliptical mask-like path — approximate
+    if(ageDays >= syn/2 - 0.5 && ageDays <= syn/2 + 0.5){
+      // near full -> yellow circle
+      const lit = document.createElementNS(ns,'circle');
+      lit.setAttribute('cx','32'); lit.setAttribute('cy','32'); lit.setAttribute('r','28');
+      lit.setAttribute('fill','#FFC107');
+      svg.appendChild(lit);
+    } else {
+      // general case: create crescent by overlay path
+      // left/right depends on ageDays < syn/2
+      const sign = (ageDays < syn/2) ? 1 : -1;
+      // use a simple circle for light, offset horizontally by sign*abs(offset)
+      const lit = document.createElementNS(ns,'circle');
+      lit.setAttribute('cx', String(32 - sign * Math.abs(offset)/2));
+      lit.setAttribute('cy','32'); lit.setAttribute('r','28');
+      lit.setAttribute('fill','#FFC107');
+      svg.appendChild(lit);
+    }
+
+    return svg;
+  }
+
+  // ---------- Moon phase compute (synodic) ----------
+  function computePhase(date){
+    const epoch = Date.UTC(2000,0,6,18,14,0);
+    const synMs = 29.530588853 * 24*3600*1000;
+    const diff = date.getTime() - epoch;
+    const ageMs = (diff % synMs + synMs) % synMs;
+    const ageDays = ageMs / (24*3600*1000);
+    const angle = 2*Math.PI*(ageDays/29.530588853);
+    const illum = Math.round((1 - Math.cos(angle))/2 * 100);
+
+    let name='', paksha='';
+    if(ageDays < 14.765294){
+      paksha='শুক্লপক্ষ';
+      if(ageDays < 1) name='অমাবস্যা';
+      else if(ageDays < 7.382647) name='বর্ধমান অর্ধচন্দ্র';
+      else name='বর্ধমান গিভাস';
+    } else {
+      paksha='কৃষ্ণপক্ষ';
+      if(ageDays < 15.765294) name='পূর্ণিমা';
+      else if(ageDays < 23.147941) name='ক্ষয়মান গিভাস';
+      else name='হ্রস্ব অর্ধচন্দ্র';
+    }
+
+    const cycles = Math.floor((date.getTime() - epoch)/synMs);
+    const nextNew = new Date(epoch + (cycles+1)*synMs);
+    const nextFull = new Date(epoch + (cycles+0.5)*synMs);
+
+    return { name, paksha, illum, nextFull, nextNew, ageDays };
+  }
+
+  // ---------- Location detection (GPS -> IP -> DEFAULT) ----------
+  function getLocationByGPS(timeout=3000){
+    return new Promise((res,rej)=>{
+      if(!navigator.geolocation) return rej('no-geo');
+      navigator.geolocation.getCurrentPosition(pos=>{
+        res({ lat:pos.coords.latitude, lon:pos.coords.longitude, source:'GPS', city:'GPS Location' });
+      }, err => rej(err), { timeout });
+    });
+  }
+  async function getLocationByIP(){
+    try{
+      const r = await fetch(API_IP);
+      if(!r.ok) throw new Error('ip-fail');
+      const j = await r.json();
+      const lat = j.latitude || j.lat || j.loc && j.loc.split(',')[0];
+      const lon = j.longitude || j.lon || j.loc && j.loc.split(',')[1];
+      if(lat && lon) return { lat: Number(lat), lon: Number(lon), source:'IP Address', city: j.city || (j.region && j.region) || 'IP Location' };
+      throw new Error('ip-no-loc');
+    }catch(e){
+      throw e;
+    }
+  }
+
+  // ---------- Moonrise / Moonset hybrid fetch ----------
+  async function getMoonTimes(lat, lon, dateStr){
+    // Try sunrise-sunset.org first
+    try{
+      const url = `${API_SS}?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lon)}&date=${encodeURIComponent(dateStr)}&formatted=0`;
+      const r = await fetch(url);
+      if(r.ok){
+        const j = await r.json();
+        if(j && j.status === 'OK'){
+          const mr = j.results.moonrise || null;
+          const ms = j.results.moonset || null;
+          return { moonrise: mr, moonset: ms, source:'sunrise-sunset' };
         }
-        /* Your preferred color for heading/emphasis */
-        .compact-header .title { color: #795548 !important; }
-        /* Ensuring Tithi labels are bold and readable */
-        .info-label { font-weight: 700 !important; }
-    `;
-    document.head.appendChild(styleTag);
-    // ---------------------------------------------------
+      }
+    }catch(e){ /* continue */ }
 
-    // API Endpoints and Default Location (Kolkata)
-    const API_OM = 'https://api.open-meteo.com/v1/forecast';
-    const API_IP = 'https://ipapi.co/json/';
-    const DEFAULT = { lat:22.57, lng:88.36, source:'স্থির স্থানাঙ্ক', city:'কলকাতা' };
-    const $ = id => document.getElementById(id);
-    
-    // --- Fallback Data (Panchika Data - Kolkata) ---
-    const FALLBACK_DATA = {
-        moon_r: '০৬:০৮ PM', 
-        moon_s: '০৬:১৭ AM',
-        // Using fixed dates for fallback (if API fails completely)
-        nextFull: new Date('2025-11-15T00:00:00Z'), 
-        nextNew: new Date('2025-11-29T00:00:00Z'),
-    };
-
-
-    // --- Localization and Formatting ---
-    function formatToBengali(isoDateString, isTime = false) {
-        if (!isoDateString || isoDateString === 'N/A') return '—';
-        try {
-            const date = new Date(isoDateString);
-            if (isNaN(date)) return '—';
-            
-            const options = { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' };
-            if (isTime) {
-                // Use the same reliable formatting function from the previously working code
-                return new Date(isoDateString).toLocaleTimeString("bn-BD",{hour:"2-digit",minute:"2-digit",hour12:true});
-            }
-            return date.toLocaleDateString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        } catch (e) {
-            return '—';
-        }
-    }
-    
-    function toBengaliNumber(num) {
-        // Corrected Bengali number function (more concise and reliable)
-        return String(num).replace(/[0-9]/g,d=>"০১২৩৪৫৬৭৮৯"[d]);
-    }
-
-
-    // --- Dynamic SVG Helpers (Moon Phase Drawing) ---
-    function createMoonSVG(ageDays){
-        const ns='http://www.w3.org/2000/svg';
-        const svg = document.createElementNS(ns,'svg'); svg.setAttribute('viewBox','0 0 64 64'); svg.setAttribute('width','40'); svg.setAttribute('height','40');
-        const base = document.createElementNS(ns,'circle');
-        base.setAttribute('cx','32'); base.setAttribute('cy','32'); base.setAttribute('r','30');
-        base.setAttribute('fill','#303f9f'); svg.appendChild(base);
-        const synDays = 29.530588853;
-        
-        // Simplified SVG logic for better rendering (using the improved logic from my working code)
-        const p = (ageDays % synDays) / synDays;
-        const shift = Math.round((p - 0.5) * 32); 
-
-        if (p < 0.98 && p > 0.02) { // Skip drawing on new/full moon for cleaner look
-            const light = document.createElementNS(ns, 'path');
-            light.setAttribute('fill', '#FFC107');
-            let d;
-            
-            if (p < 0.5) { // Waxing (Shukla Paksha)
-                const arcWidth = 30 * Math.cos(2 * Math.PI * p);
-                d = `M 32 2 A 30 30 0 0 1 32 62 L 32 62 A 30 ${Math.abs(arcWidth)} 0 0 1 32 2 Z`;
-            } else { // Waning (Krishna Paksha)
-                const arcWidth = 30 * Math.cos(2 * Math.PI * p);
-                d = `M 32 2 A 30 30 0 0 0 32 62 L 32 62 A 30 ${Math.abs(arcWidth)} 0 0 0 32 2 Z`;
-            }
-            light.setAttribute('d', d);
-            svg.appendChild(light);
-        } else if (p >= 0.48 && p <= 0.52) {
-             base.setAttribute('fill', '#FFC107'); // Full Moon
+    // Try Open-Meteo (daily) — manual ISO assembly because open-meteo returns times like "06:08"
+    try{
+      const u = `${API_OM}?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&daily=moonrise,moonset,full_moon,new_moon&timezone=auto`;
+      const r2 = await fetch(u);
+      if(r2.ok){
+        const j2 = await r2.json();
+        if(j2 && j2.daily && Array.isArray(j2.daily.moonrise) && j2.daily.moonrise.length){
+          // open-meteo returns strings (ISO or "HH:MM")
+          const mr_raw = j2.daily.moonrise[0];
+          const ms_raw = j2.daily.moonset[0];
+          // If values look like "2025-11-06T18:08:00+00:00" or similar, return them
+          let mr = null, ms = null;
+          if(typeof mr_raw === 'string' && mr_raw.indexOf('T')>=0) mr = mr_raw;
+          else if(typeof mr_raw === 'string' && /^\d{2}:\d{2}$/.test(mr_raw)){
+            mr = dateStr + 'T' + mr_raw;
+          }
+          if(typeof ms_raw === 'string' && ms_raw.indexOf('T')>=0) ms = ms_raw;
+          else if(typeof ms_raw === 'string' && /^\d{2}:\d{2}$/.test(ms_raw)){
+            ms = dateStr + 'T' + ms_raw;
+          }
+          return { moonrise: mr, moonset: ms, source:'open-meteo' };
         }
-        return svg.outerHTML; 
-    }
-    
-    // --- Engine Logic ---
-    
-    // Geolocation with GPS/IP Fallback
-    async function loadCoordinates() {
-        try {
-            if(navigator.geolocation) {
-                const pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 3000 }));
-                return { lat: pos.coords.latitude, lng: pos.coords.longitude, source: 'GPS', city: 'GPS অবস্থান' };
-            }
-        } catch (e1) {}
-        try {
-            const response = await fetch(API_IP);
-            const data = await response.json();
-            if (data.latitude && data.longitude) {
-                return { lat: data.latitude, lng: data.longitude, source: 'IP Address', city: data.city || 'IP অবস্থান' };
-            }
-        } catch (e2) {}
-        return DEFAULT;
-    }
-    
-    // Moon Phase and Paksha Compute (THIS IS THE FUNCTION YOU SAID WAS WORKING EXCEPT FOR NEXT TITHIS)
-    function computePhase(date){
-        const epoch = Date.UTC(2000,0,6,18,14,0);
-        const synMs = 29.530588853 * 24*3600*1000;
-        const diff = date.getTime() - epoch;
-        const ageMs = (diff % synMs + synMs) % synMs;
-        const ageDays = ageMs / (24*3600*1000);
-        const angle = 2*Math.PI*(ageDays/29.530588853);
-        const illum = Math.round((1 - Math.cos(angle))/2 * 100);
-        
-        let name = '';
-        let paksha = '';
-        
-        // This is the logic you wanted to keep for the current phase/paksha name:
-        if(ageDays < 15.765294) {
-            paksha = 'শুক্লপক্ষ'; 
-            if(ageDays < 1) name='অমাবস্যা';
-            else if(ageDays < 8.382647) name='বর্ধমান অর্ধচন্দ্র';
-            else name='বর্ধমান গিভাস';
-        } else {
-            paksha = 'কৃষ্ণপক্ষ'; 
-            if(ageDays < 15.765294+1) name='পূর্ণিমা';
-            else if(ageDays < 23.147941) name='ক্ষয়মান গিভাস';
-            else name='হ্রস্ব অর্ধচন্দ্র';
-        }
-        
-        // Next Tithis are deliberately NOT calculated here, as they will be fetched from API.
-        // Returning placeholder values that will be overwritten by API data in loadAll().
-        return { name, illum, paksha, nextFull: null, nextNew: null, ageDays };
-    }
-    
-    // --- Master Render Function: Builds only Moon Card HTML and CSS ---
-    
-    function buildWidget(data) {
-        const phase = computePhase(new Date());
-        
-        // --- CSS Styles (Incorporated into the script's forced style) ---
-        const css = `
-            <style>
-                /* Replicating the existing styles */
-                .compact-card { background-color: #FFFFFF; border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); max-width: 300px; }
-                .compact-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #E0E0E0; }
-                .compact-header .icon { font-size: 1.4em; color: #FFC107; line-height: 1; margin-right: 6px; }
-                .compact-header .title { color: #5D4037; font-size: 1.1em; font-weight: 700; }
-                .time-row { display: flex; justify-content: space-between; margin: 6px 0; font-size: 0.95em; }
-                .info-label { font-weight: 600; color: #555; white-space: nowrap; }
-                .info-value { font-weight: 700; color: #000; }
-                .location-tag { font-size: 0.75em; color: #999; text-align: right; margin-top: 8px; padding-top: 5px; border-top: 1px solid #E0E0E0; }
-                .moon-panel { background-color: #F0F4F7; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
-                .moon-tide-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #D0D0D0; }
-                .moon-info-meta { font-size: 0.9em; }
-                .moon-info-meta div:first-child { font-weight: 700; color: #303f9f; }
-            </style>
-        `;
-        
-        // --- 2. Moon Times & Phase HTML ---
-        // **data.nextFull / data.nextNew now hold the API Tithi dates (or fallback)**
-        const moonPanelHTML = `
-            <div class="compact-card moon-panel">
-                <div class="compact-header">
-                    <span class="icon">🌙</span>
-                    <span class="title">চন্দ্র সময় ও পর্যায়</span>
-                </div>
-                
-                <div class="time-row"><span class="info-label">চন্দ্রোদয়:</span><span class="info-value">${data.moon_r || '—'}</span></div>
-                <div class="time-row"><span class="info-label">চন্দ্রাস্ত:</span><span class="info-value">${data.moon_s || '—'}</span></div>
-                
-                <div class="moon-tide-top" style="margin-top:15px;">
-                    <div class="moon-svg-container">${createMoonSVG(phase.ageDays)}</div>
-                    <div class="moon-info-meta">
-                        <div>পর্যায়: ${phase.name} (${phase.paksha})</div>
-                        <div>আলোকমাত্রা: ${toBengaliNumber(phase.illum)}%</div>
-                    </div>
-                </div>
-    
-                <div style="font-size:0.9em; margin-top:10px;">
-                    <div class="time-row"><span class="info-label">পরবর্তী পূর্ণিমা:</span><span class="info-value">${data.nextFull || '—'}</span></div>
-                    <div class="time-row"><span class="info-label">পরবর্তী অমাবস্যা:</span><span class="info-value">${data.nextNew || '—'}</span></div>
-                </div>
-            </div>
-        `;
-    
-        // 3. Location Tag (Source)
-        const locationHTML = `<div class="location-tag">স্থান সূত্র: ${data.source} | ${data.city}</div>`;
-    
-        // Combine all parts
-        return css + moonPanelHTML + locationHTML;
-    }
-    
-    // --- Main Loader Function ---
-    
-    async function loadAll() {
-        let STATE = { lat: DEFAULT.lat, lng: DEFAULT.lng, source: DEFAULT.source, city: DEFAULT.city, moon_r:null, moon_s:null, nextFull: null, nextNew: null };
-        const targetElement = $('madhabam-final-moon-widget'); 
-        if (targetElement) { targetElement.innerHTML = buildWidget(STATE); } // Initial render
-    
-        const coords = await loadCoordinates();
-        STATE.lat = coords.lat;
-        STATE.lng = coords.lng;
-        STATE.source = coords.source;
-        STATE.city = coords.city;
-        
-        // Fetch Data from Open-Meteo API (includes moonrise, moonset, full_moon, new_moon)
-        try {
-            const r2 = await fetch(API_OM + `?latitude=${STATE.lat}&longitude=${STATE.lng}&daily=moonrise,moonset,full_moon,new_moon&timezone=auto`);
-            const j2 = r2.ok ? await r2.json() : {};
-            if(j2.daily && j2.daily.moonrise && j2.daily.moonrise.length && j2.daily.moonrise[0] && j2.daily.moonrise[0] !== null){
-                STATE.moon_r = formatToBengali(j2.daily.moonrise[0], true);
-                STATE.moon_s = formatToBengali(j2.daily.moonset[0], true);
-                
-                // *** TITHI CALCULATION FIX: Use API data for next tithis ***
-                STATE.nextFull = formatToBengali(j2.daily.full_moon[0], false); // API Full Moon Date
-                STATE.nextNew = formatToBengali(j2.daily.new_moon[0], false);   // API New Moon Date
-            } else {
-                 // API returned No Data/Null - Use Fallback Data
-                STATE.moon_r = FALLBACK_DATA.moon_r;
-                STATE.moon_s = FALLBACK_DATA.moon_s;
-                STATE.nextFull = formatToBengali(FALLBACK_DATA.nextFull, false);
-                STATE.nextNew = formatToBengali(FALLBACK_DATA.nextNew, false);
-            }
-        } catch(e) {
-            // API FAILED ENTIRELY (Network/Other Error) - Use Fallback Data
-            STATE.moon_r = FALLBACK_DATA.moon_r;
-            STATE.moon_s = FALLBACK_DATA.moon_s;
-            STATE.nextFull = formatToBengali(FALLBACK_DATA.nextFull, false);
-            STATE.nextNew = formatToBengali(FALLBACK_DATA.nextNew, false);
-            console.error("API failed. Using Fallback Data.");
-        }
-        
-        // Final render with actual data
-        if (targetElement) { targetElement.innerHTML = buildWidget(STATE); }
-    }
-    
-    loadAll();
-    setInterval(loadAll, 1800000); // Refresh every 30 minutes
+      }
+    }catch(e){ /* continue */ }
+
+    // Panchika fallback approximate (best-effort)
+    try{
+      const now = new Date();
+      const noonIso = now.toISOString().slice(0,10) + 'T12:00:00Z';
+      // approximate shift based on synodic age:
+      const epoch = Date.UTC(2000,0,6,18,14,0);
+      const synDays = 29.530588853;
+      const ageDays = ((now.getTime() - epoch)/(24*3600*1000)) % synDays;
+      const shiftHours = (ageDays - synDays/2) / (synDays/2) * 5; // -5..+5
+      const mrDate = new Date(Date.parse(noonIso) + (shiftHours-6)*3600*1000);
+      const msDate = new Date(Date.parse(noonIso) + (shiftHours+6)*3600*1000);
+      return { moonrise: mrDate.toISOString(), moonset: msDate.toISOString(), source:'panchika-fallback' };
+    }catch(e){
+      return { moonrise:null, moonset:null, source:'none' };
+    }
+  }
+
+  // ---------- Render/updater ----------
+  async function renderAll(){
+    const container = document.getElementById(CONTAINER_ID);
+    if(!container) return;
+
+    buildShell(container); // create DOM skeleton
+
+    // Try location
+    let coords = null;
+    try{ coords = await getLocationByGPS(2500); }
+    catch(e){
+      try{ coords = await getLocationByIP(); }
+      catch(e2){ coords = DEFAULT; }
+    }
+    const lat = coords.lat; const lon = coords.lon || coords.lng || coords.longitude || coords.lon;
+    const cityName = coords.city || DEFAULT.city;
+    const sourceName = coords.source || DEFAULT.source;
+
+    // date ISO
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0,10);
+
+    // set location display (textContent so Blogger won't break)
+    const locEl = document.getElementById('mb-loc');
+    if(locEl){
+      locEl.textContent = `স্থল সূত্র: ${sourceName} | ${cityName}`;
+    }
+
+    // Try moon times hybrid
+    let mt = { moonrise:null, moonset:null, source:null };
+    try{ mt = await getMoonTimes(lat, lon, dateStr); } catch(e){ mt = {moonrise:null, moonset:null, source:null}; }
+
+    // parse moonrise/moonset to Date objects (if possible)
+    let mrDate = null, msDate = null;
+    try{
+      if(mt.moonrise){
+        const d = new Date(mt.moonrise);
+        if(!isNaN(d)) mrDate = d;
+      }
+    }catch(e){ mrDate = null; }
+    try{
+      if(mt.moonset){
+        const d2 = new Date(mt.moonset);
+        if(!isNaN(d2)) msDate = d2;
+      }
+    }catch(e){ msDate = null; }
+
+    // If one of them still null, try alternate day/ISO assembly: sometimes moonrise reported as "HH:MM"
+    // (handled in getMoonTimes already)
+
+    // Fill moonrise/moonset DOM (textContent)
+    const mrEl = document.getElementById('mb-moonrise');
+    const msEl = document.getElementById('mb-moonset');
+    mrEl && (mrEl.textContent = mrDate ? toBnTimeFromDate(mrDate) : '— —');
+    msEl && (msEl.textContent = msDate ? toBnTimeFromDate(msDate) : '— —');
+
+    // Compute phase (use current local date)
+    const phase = computePhase(new Date());
+    const phaseText = document.getElementById('mb-phase-text');
+    if(phaseText) phaseText.textContent = `${phase.name} (${phase.paksha})`;
+
+    const illumEl = document.getElementById('mb-illum');
+    if(illumEl) illumEl.textContent = `আলোকমাত্রা: ${toBnNumber(phase.illum)}%`;
+
+    // nextFull / nextNew
+    const nfEl = document.getElementById('mb-next-full');
+    const nnEl = document.getElementById('mb-next-new');
+    if(nfEl) nfEl.textContent = `পূর্ণিমা: ${toBnDateFromDate(phase.nextFull)}`;
+    if(nnEl) nnEl.textContent = `অমাবস্যা: ${toBnDateFromDate(phase.nextNew)}`;
+
+    // moon svg
+    const svgHolder = document.getElementById('mb-moon-svg');
+    if(svgHolder){
+      // clear
+      while(svgHolder.firstChild) svgHolder.removeChild(svgHolder.firstChild);
+      const svg = buildMoonSVG(phase.ageDays);
+      svgHolder.appendChild(svg);
+    }
+
+    // location footer (already set)
+    // ensure all text nodes used textContent (done)
+
+    // debug console (optional)
+    // console.log('Moon times source:', mt.source, 'mr/ms:', mt.moonrise, mt.moonset, 'coords', coords);
+  }
+
+  // initial + interval
+  renderAll();
+  setInterval(renderAll, REFRESH_MS);
+
+  // expose for debug
+  window.MadhabamMoonWidget = { refresh: renderAll };
 
 })();
-
 </script>
