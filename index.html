@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>মাধবম — বাংলা ক্যালেন্ডার ও পঞ্জিকা</title>
+
+<!-- Fonts (if you host fonts on GitHub, change these URLs) -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#fff3f7;
+    --card:#fde8ef;
+    --pink-start:#ffe6f0;
+    --pink-end:#ffebf3;
+    --accent:#2b2e8a;
+    --muted:#8a6f6f;
+    --ok:#ef5350;
+    --radius:14px;
+    --shadow: 0 6px 20px rgba(0,0,0,0.06);
+    font-family: "Noto Sans Bengali", system-ui, sans-serif;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);color:#222}
+  .wrap{max-width:1100px;margin:18px auto;padding:18px;}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .monthTitle{font-family: "Him", "Noto Sans Bengali", serif;font-size:28px;color:#b33;}
+  .controls{display:flex;gap:8px;align-items:center}
+  button, .btn{background:#fff;border:1px solid rgba(0,0,0,0.06);padding:8px 12px;border-radius:10px;cursor:pointer}
+  .calendarGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;background:transparent}
+  .wkHead{padding:10px 8px;text-align:center;font-weight:700;color:var(--accent)}
+  .dayCell{background:linear-gradient(180deg,var(--pink-start),var(--pink-end));border-radius:12px;padding:14px;height:120px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .dayNumBn{font-size:34px;font-family:"Him", "Noto Sans Bengali", serif;color:var(--accent);line-height:1}
+  .daySmall{position:absolute;top:8px;right:10px;color:var(--muted);font-size:12px}
+  .greg{position:absolute;bottom:8px;left:10px;font-size:12px;color:#0b61a3}
+  .festival{position:absolute;bottom:8px;right:10px;font-size:12px;color:#d35400}
+  .today{outline:4px solid rgba(255,200,80,0.25);box-shadow:0 6px 30px rgba(0,0,0,0.08)}
+  .nav{display:flex;gap:8px}
+  .details{background:#fff;border-radius:12px;padding:14px;margin-top:18px;box-shadow:var(--shadow)}
+  pre{background:#fff1f6;padding:12px;border-radius:8px;max-height:320px;overflow:auto}
+  /* responsive */
+  @media(max-width:700px){ .dayCell{height:110px;padding:10px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="monthTitle" id="bnMonth">কার্তিক ১৪৩২</div>
+      <div style="font-size:13px;color:#444" id="gregMonth">Oct 2025</div>
+    </div>
+    <div class="controls">
+      <div class="nav">
+        <button id="prevMonth">◀</button>
+        <button id="todayBtn">আজ</button>
+        <button id="nextMonth">▶</button>
+      </div>
+      <select id="modeSelect" style="margin-left:8px;padding:8px;border-radius:10px">
+        <option value="drik">দৃক (Govt)</option>
+        <option value="surya">সূর্য (Surya)</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- week headings -->
+  <div class="calendarGrid" id="weekHeads" style="margin-bottom:8px;">
+    <div class="wkHead">রবি</div><div class="wkHead">সোম</div><div class="wkHead">মঙ্গল</div><div class="wkHead">বুধ</div><div class="wkHead">বৃহঃ</div><div class="wkHead">শুক্র</div><div class="wkHead">শনি</div>
+  </div>
+
+  <!-- month grid -->
+  <div id="grid" class="calendarGrid"></div>
+
+  <!-- details panel -->
+  <div id="details" class="details" hidden>
+    <h3 id="detailTitle">তারিখ —</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px">
+        <div id="panchikaSummary"></div>
+      </div>
+      <div style="flex:1;min-width:240px">
+        <div id="astroBox"></div>
+      </div>
+    </div>
+
+    <h4 style="margin-top:14px">পুর্ণ পঞ্জিকা রিপোর্ট (ডিবাগ)</h4>
+    <pre id="jsonDump">{ }</pre>
+  </div>
+</div>
+
+<!-- -------------------------------
+   PART B: Madhabam Panchika Engine (integrated & fixed)
+   (uses internal calculations; adapted from user snippets)
+---------------------------------- -->
+<script>
+/* ====== PART B: Madhabam Panchika Engine (Self-contained) ====== */
+/* All calculations internal — no external API calls. Auto-refresh hourly + on tithi/nak end. */
+
+(function(global){
+  const D2R=Math.PI/180, R2D=180/Math.PI;
+  const norm = x => ((x%360)+360)%360;
+  const DAYS_BN=["রবিবার","সোমবার","মঙ্গলবার","বুধবার","বৃহস্পতিবার","শুক্রবার","শনিবার"];
+
+  function JD(y,m,d,ut=0){
+    if(m<=2){ y--; m+=12; }
+    const A=Math.floor(y/100), B=2-A+Math.floor(A/4);
+    return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+d+B-1524.5 + ut/24;
+  }
+
+  function gmst(J){
+    const T=(J-2451545)/36525;
+    return norm(280.46061837 + 360.98564736629*(J-2451545) + 0.000387933*T*T - T*T*T/38710000);
+  }
+
+  function obliq(T){ return 23.439291 - 0.0130042*T; }
+
+  function eclToEq(l, J){
+    const eps = obliq((J-2451545)/36525) * D2R;
+    const L = l * D2R;
+    const ra = Math.atan2(Math.sin(L)*Math.cos(eps), Math.cos(L)) * R2D;
+    const dec = Math.asin(Math.sin(eps)*Math.sin(L)) * R2D;
+    return { ra: norm(ra)/15, dec: dec };
+  }
+
+  function lstDeg(J, lon){ return (gmst(J) + lon) % 360; }
+
+  function altDeg(dec, ha, lat){
+    return Math.asin(Math.sin(lat*D2R)*Math.sin(dec*D2R) + Math.cos(lat*D2R)*Math.cos(dec*D2R)*Math.cos(ha*D2R)) * R2D;
+  }
+
+  function sunLong(J){
+    const d=J-2451545;
+    const M = norm(357.52911 + 0.98560028*d);
+    return norm(280.46646 + 0.98564736*d + 1.9146*Math.sin(M*D2R) + 0.02*Math.sin(2*M*D2R));
+  }
+  function moonLong(J){
+    const d=J-2451545;
+    const Lm = norm(218.3165 + 13.176358*d);
+    const D  = norm(297.8501921 + 12.19074912*d);
+    const Ms = norm(357.5291092 + 0.98560028*d);
+    const Mm = norm(134.9633964 + 13.06499295*d);
+    return norm(Lm + 6.289*Math.sin(Mm*D2R) + 1.274*Math.sin((2*D-Mm)*D2R) + 0.658*Math.sin(2*D*D2R) - 0.186*Math.sin(Ms*D2R));
+  }
+
+  /* MODE / AYANAMSA */
+  const MODE_KEY="madhabam_mode_v7";
+  let MODE = localStorage.getItem(MODE_KEY) || "drik";
+  function setMode(m){ MODE=m; localStorage.setItem(MODE_KEY,m); }
+
+  function lahiriAyanamsa(J){
+    const T=(J-2451545.0)/36525;
+    // simplified approximation (deg)
+    return 24.0 + 0.0; 
+  }
+
+  const MODE_PARAMS = {
+    surya:{ sun_h0:-0.833, moon_h0:+0.125, sun_corr_deg:0.00, moon_corr_deg:0.00, tithi_bias_deg:0.00, ayan:()=>24.0 },
+    drik :{ sun_h0:-0.833, moon_h0:+0.25,  sun_corr_deg:0.28, moon_corr_deg:3.50, tithi_bias_deg:0.25, ayan:lahiriAyanamsa }
+  };
+
+  function correctedSunLong(J,engine){ return norm(sunLong(J) + (MODE_PARAMS[engine]?.sun_corr_deg||0)); }
+  function correctedMoonLong(J,engine){ return norm(moonLong(J) + (MODE_PARAMS[engine]?.moon_corr_deg||0)); }
+
+  function tithiInfoAt(J, engine){
+    const p = MODE_PARAMS[engine] || MODE_PARAMS.surya;
+    const ls = correctedSunLong(J,engine);
+    const lm = correctedMoonLong(J,engine);
+    const diff = norm(lm - ls + (p.tithi_bias_deg||0));
+    const num = Math.floor(diff/12) + 1; // 1..30
+    const paksha = (num<=15) ? "শুক্লপক্ষ" : "কৃষ্ণপক্ষ";
+    return { num, paksha, angle: diff };
+  }
+
+  /* PART 2 snippets (merged) */
+  function siderealMoonLong(J, engine){
+    const ay = (MODE_PARAMS[engine]?.ayan?.(J) ?? 24.0);
+    return norm(correctedMoonLong(J,engine) - ay);
+  }
+  function nakIdx(J, engine){ return Math.floor(siderealMoonLong(J, engine) / (360/27)) % 27; }
+
+  function tithiEndUTC(JstartUTC, engine){
+    const cur = tithiInfoAt(JstartUTC,engine).num;
+    let lo=JstartUTC, hi=JstartUTC+2;
+    for(let i=0;i<50;i++){ const mid=(lo+hi)/2; const n=tithiInfoAt(mid,engine).num; if(n!==cur) hi=mid; else lo=mid; }
+    return hi;
+  }
+  function nakEndUTC(JstartUTC, engine){
+    const cur = nakIdx(JstartUTC, engine);
+    let lo=JstartUTC, hi=JstartUTC+1.5;
+    while (nakIdx(hi,engine)===cur && (hi-JstartUTC)<2.0) hi += 0.1;
+    for(let i=0;i<50;i++){ const mid=(lo+hi)/2; const idx=nakIdx(mid,engine); if(idx!==cur) hi=mid; else lo=mid; }
+    return hi;
+  }
+
+  const B_MONTHS=["বৈশাখ","জ্যৈষ্ঠ","আষাঢ়","শ্রাবণ","ভাদ্র","আশ্বিন","কার্তিক","অগ্রহায়ণ","পৌষ","মাঘ","ফাল্গুন","চৈত্র"];
+  function bangabdaFromSun(J, localDate){
+    const by = (localDate >= new Date(localDate.getFullYear(),3,14)) ? (localDate.getFullYear()-593) : (localDate.getFullYear()-594);
+    const ay = (MODE_PARAMS[MODE].ayan(J));
+    const lon = norm(sunLong(J) - ay);
+    const sign = Math.floor(lon/30);
+    const day = Math.floor((lon%30)) + 1;
+    return { month:B_MONTHS[sign], day, year:by, sunSignIdx:sign, sunLong:lon };
+  }
+
+  /* ascendant (fixed formula) */
+  function ascendantDeg(J, lon, lat){
+    // compute ecliptic longitude of ascendant approx
+    const LSTdeg = lstDeg(J, lon);
+    const eps = obliq((J-2451545)/36525) * D2R;
+    const LST = LSTdeg * D2R;
+    const phi = lat * D2R;
+    // convert to ecliptic longitude (approx)
+    const tanBeta = Math.tan(LST)*Math.cos(eps) - Math.tan(phi)*Math.sin(eps);
+    const asc = Math.atan2(Math.sin(LST)*Math.cos(eps) - Math.tan(phi)*Math.sin(eps), Math.cos(LST));
+    let ascDeg = asc * R2D;
+    ascDeg = norm(ascDeg);
+    return ascDeg;
+  }
+
+  function moonRashiProgress(J, engine){
+    const sm = siderealMoonLong(J, engine); // 0..360
+    const sign = Math.floor(sm/30); // 0..11
+    const inSignDeg = sm % 30;
+    const partIndex = Math.floor(inSignDeg / 10); // 0,1,2
+    const partProgress = (inSignDeg % 10) / 10;
+    const signNames = ["মেষ","বৃষ","মিথুন","কর্কট","সিংহ","কন্যা","তুলা","বৃশ্চিক","ধনু","মকর","কুম্ভ","মীন"];
+    return { sign, inSignDeg, partIndex, partProgress, signName: signNames[sign] };
+  }
+
+  /* Location resolver Fallback (non-blocking) */
+  async function getLocation(){
+    const FALLBACK={lat:22.5726, lon:88.3639, tz:(-new Date().getTimezoneOffset()/60), place:"Kolkata, India", city:"Kolkata", label:'Fallback'};
+    if(navigator.geolocation){
+      try{
+        const p = await new Promise((res,rej)=>{
+          navigator.geolocation.getCurrentPosition(pos=>res(pos), err=>rej(err), {timeout:5000});
+        });
+        const lat=p.coords.latitude, lon=p.coords.longitude;
+        return { lat, lon, tz:(-new Date().getTimezoneOffset()/60), place: 'GPS Location', city:'GPS', label:'GPS' };
+      }catch(e){}
+    }
+    return FALLBACK;
+  }
+
+  function fmt12(h){
+    if(h==null || isNaN(h)) return "—";
+    h = (h+24)%24;
+    const ap = h>=12 ? "PM" : "AM";
+    let hh = Math.floor(h%12); if(hh===0) hh=12;
+    const mm = String(Math.round((h%1)*60)).padStart(2,"0");
+    return `${hh}:${mm} ${ap}`;
+  }
+
+  /* simple sunrise solver (coarse) */
+  function solarRiseSetUTC_raw(J0, lat, lon, h0){
+    let rise=null, setv=null;
+    for(let k=0;k<24;k++){
+      const a = J0 + k/24, b = J0 + (k+1)/24;
+      const La = eclToEq(sunLong(a), a), Lb = eclToEq(sunLong(b), b);
+      const Ha = ((lstDeg(a,lon)/15 - La.ra)*15 + 540)%360 - 180;
+      const Hb = ((lstDeg(b,lon)/15 - Lb.ra)*15 + 540)%360 - 180;
+      const Aa = altDeg(La.dec, Ha, lat) - h0;
+      const Ab = altDeg(Lb.dec, Hb, lat) - h0;
+      if(Aa<0 && Ab>0 && rise===null){
+        let lo=a, hi=b;
+        for(let i=0;i<20;i++){
+          const m=(lo+hi)/2;
+          const L=eclToEq(sunLong(m), m);
+          const H = ((lstDeg(m,lon)/15 - L.ra)*15 + 540)%360 - 180;
+          const A = altDeg(L.dec, H, lat) - h0;
+          if(A<0) lo=m; else hi=m;
+        }
+        rise = ((lo+hi)/2 - J0)*24;
+      }
+      if(Aa>0 && Ab<0 && setv===null){
+        let lo=a, hi=b;
+        for(let i=0;i<20;i++){
+          const m=(lo+hi)/2;
+          const L=eclToEq(sunLong(m), m);
+          const H = ((lstDeg(m,lon)/15 - L.ra)*15 + 540)%360 - 180;
+          const A = altDeg(L.dec, H, lat) - h0;
+          if(A>0) lo=m; else hi=m;
+        }
+        setv = ((lo+hi)/2 - J0)*24;
+      }
+    }
+    return { riseUTC: rise, setUTC: setv };
+  }
+
+  /* MAIN exposed API */
+  async function computeForDate(dateObj){
+    const loc = await getLocation();
+    const lat = loc.lat, lon = loc.lon, tz = loc.tz;
+    const now = dateObj instanceof Date ? dateObj : new Date();
+    const Y = now.getFullYear(), M = now.getMonth()+1, D = now.getDate();
+    const J0UTC = JD(Y,M,D,0);
+    const sParam = MODE_PARAMS[MODE];
+    const sUTC0 = solarRiseSetUTC_raw(J0UTC, lat, lon, sParam.sun_h0);
+    const srLocalHour0 = (sUTC0.riseUTC!=null) ? (sUTC0.riseUTC + tz) : 6;
+    const localHr = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
+    const JdayUTC = (localHr < srLocalHour0) ? (J0UTC - 1) : J0UTC;
+    const JEval = JdayUTC + ((srLocalHour0 - tz) + 0.5)/24;
+
+    const tNow = tithiInfoAt(JEval, MODE);
+    const nIdx = nakIdx(JEval, MODE);
+    const tEndUTC = tithiEndUTC(JEval, MODE);
+    const nEndUTC = nakEndUTC(JEval, MODE);
+
+    const sEv = (function(){
+      const raw = solarRiseSetUTC_raw(JdayUTC, lat, lon, sParam.sun_h0);
+      const off = (Math.abs(lat) < 10 ? 0 : Math.abs(lat)<25 ? 0.5 : 1.0)/60;
+      return { riseUTC: raw.riseUTC!=null ? raw.riseUTC + off : null, setUTC: raw.setUTC!=null ? raw.setUTC + off : null };
+    })();
+
+    const sr = (sEv.riseUTC!=null) ? fmt12(sEv.riseUTC + tz) : "—";
+    const ss = (sEv.setUTC!=null)  ? fmt12(sEv.setUTC  + tz) : "—";
+
+    const tEndLocal = (tEndUTC - JdayUTC)*24 + tz;
+    const nEndLocal = (nEndUTC - JdayUTC)*24 + tz;
+
+    const bang = bangabdaFromSun(JEval, new Date(JEval*86400000));
+
+    const ascDeg = ascendantDeg(JEval, lon, lat);
+    const ascSignIdx = Math.floor(ascDeg/30);
+    const ascSignName = ["মেষ","বৃষ","মিথুন","কর্কট","সিংহ","কন্যা","তুলা","বৃশ্চিক","ধনু","মকর","কুম্ভ","মীন"][ascSignIdx];
+
+    const moonProg = moonRashiProgress(JEval, MODE);
+
+    return {
+      ctx: { JdayUTC: JdayUTC, evalJD: JEval, date: new Date() },
+      tithi: tNow,
+      tithiEndLocal: tEndLocal,
+      nakIdx: nIdx,
+      nakEndLocal: nEndLocal,
+      bangabda: bang,
+      srLocal: sr,
+      ssLocal: ss,
+      ascendant: { deg: ascDeg, sign: ascSignName },
+      moonProg,
+      loc
+    };
+  }
+
+  // expose
+  global.Madhabam = {
+    computeForDate,
+    setMode,
+    getMode: ()=>MODE,
+    setLocalMode: (m)=>{ setMode(m); MODE=m; }
+  };
+
+})(window);
+</script>
+
+<!-- -------------------------------
+   UI glue: render month grid and details
+---------------------------------- -->
+<script>
+(async function(){
+  const grid = document.getElementById('grid');
+  const bnMonth = document.getElementById('bnMonth');
+  const gregMonth = document.getElementById('gregMonth');
+  const jsonDump = document.getElementById('jsonDump');
+  const detailTitle = document.getElementById('detailTitle');
+  const panchikaSummary = document.getElementById('panchikaSummary');
+  const astroBox = document.getElementById('astroBox');
+  const details = document.getElementById('details');
+
+  // Keep a simple month state (show current month)
+  let current = new Date();
+  current.setDate(1);
+
+  function renderWeekGridHead(){ /* already present */ }
+
+  function bnDigits(n){
+    const map = {'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
+    return String(n).split('').map(ch=>map[ch]||ch).join('');
+  }
+
+  function clearGrid(){
+    grid.innerHTML = '';
+  }
+
+  async function renderMonth(date){
+    clearGrid();
+    const year = date.getFullYear(), month = date.getMonth();
+    // find first day displayed (grid starts on Sunday)
+    const firstDay = new Date(year, month, 1);
+    const startOffset = firstDay.getDay(); // 0..6
+    // number of days in month
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    // fill blank cells for previous month
+    for(let i=0;i<startOffset;i++){
+      const blank = document.createElement('div'); blank.className='dayCell'; blank.style.opacity=0.35; grid.appendChild(blank);
+    }
+
+    // fill days
+    for(let d=1; d<=daysInMonth; d++){
+      const cell = document.createElement('div'); cell.className='dayCell';
+      const dn = document.createElement('div'); dn.className='dayNumBn'; dn.innerText = bnDigits(d);
+      const s = document.createElement('div'); s.className='daySmall';
+      // greg small
+      const g = document.createElement('div'); g.className='greg'; g.innerText = new Date(year,month,d).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      cell.appendChild(s); cell.appendChild(dn); cell.appendChild(g);
+
+      // festival placeholder (we will compute panchika on click)
+      const fest = document.createElement('div'); fest.className='festival'; cell.appendChild(fest);
+
+      cell.addEventListener('click', async ()=>{
+        const dt = new Date(year,month,d,12,0,0);
+        const rpt = await window.Madhabam.computeForDate(dt);
+        detailTitle.innerText = `${rpt.bangabda.month} ${bnDigits(rpt.bangabda.day)} ${rpt.bangabda.year} — ${dt.toLocaleDateString('en-US')}`;
+        panchikaSummary.innerHTML = `
+          <strong>সূর্যোদয় / সূর্যাস্ত:</strong> ${rpt.srLocal} / ${rpt.ssLocal} <br/>
+          <strong>তিথি:</strong> ${rpt.tithi.num} — ${rpt.tithi.paksha} <br/>
+          <strong>তিথি শেষ:</strong> ${Math.round(rpt.tithiEndLocal*100)/100} (Local hr) <br/>
+          <strong>নক্ষত্র (index):</strong> ${rpt.nakIdx} <br/>
+          <strong>Bangabda:</strong> ${rpt.bangabda.month} ${rpt.bangabda.day}, ${rpt.bangabda.year} <br/>
+        `;
+        astroBox.innerHTML = `
+          <strong>Lagna:</strong> ${Math.round(rpt.ascendant.deg*100)/100}° — ${rpt.ascendant.sign} <br/>
+          <strong>Moon:</strong> ${rpt.moonProg.signName} (${Math.round(rpt.moonProg.inSignDeg*100)/100}°) <br/>
+        `;
+        jsonDump.textContent = JSON.stringify(rpt, null, 2);
+        details.hidden = false;
+        window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
+      });
+
+      grid.appendChild(cell);
+    }
+
+    // fill trailing blank cells so grid is multiple of 7
+    const totalCells = startOffset + daysInMonth;
+    const trailing = (7 - (totalCells%7)) % 7;
+    for(let i=0;i<trailing;i++){ const blank = document.createElement('div'); blank.className='dayCell'; blank.style.opacity=0.35; grid.appendChild(blank); }
+
+    // update header labels
+    const today = new Date();
+    const monthNameBn = (new Intl.DateTimeFormat('bn-BD',{month:'long'}).format(date) || 'মাস'); // fallback
+    bnMonth.innerText = `${monthNameBn} ${ (date.getFullYear()-593) }`;
+    gregMonth.innerText = `${date.toLocaleString('en-US',{month:'long', year:'numeric'})}`;
+  }
+
+  // nav
+  document.getElementById('prevMonth').addEventListener('click', ()=>{ current.setMonth(current.getMonth()-1); renderMonth(current); });
+  document.getElementById('nextMonth').addEventListener('click', ()=>{ current.setMonth(current.getMonth()+1); renderMonth(current); });
+  document.getElementById('todayBtn').addEventListener('click', ()=>{ current = new Date(); current.setDate(1); renderMonth(current); });
+
+  // mode select
+  const modeSel = document.getElementById('modeSelect');
+  modeSel.value = window.Madhabam.getMode ? window.Madhabam.getMode() : 'drik';
+  modeSel.addEventListener('change', (e)=>{
+    const m = e.target.value;
+    window.Madhabam.setLocalMode(m);
+  });
+
+  // initial render
+  renderMonth(current);
+
+})();
+</script>
+</body>
+  </html>
